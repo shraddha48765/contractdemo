@@ -10,17 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
+import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as MonitoringRouteImport } from './routes/monitoring'
 import { Route as GovernanceRouteImport } from './routes/governance'
 import { Route as ControlTowerRouteImport } from './routes/control-tower'
 import { Route as ContractsRouteImport } from './routes/contracts'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as RequestsIndexRouteImport } from './routes/requests.index'
-import { Route as RequestsIdRouteImport } from './routes/requests.$id'
+import { Route as RequestsIdRouteImport } from './routes/requests_.$id'
 
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestsRoute = RequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonitoringRoute = MonitoringRouteImport.update({
@@ -48,13 +53,8 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RequestsIndexRoute = RequestsIndexRouteImport.update({
-  id: '/requests/',
-  path: '/requests/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RequestsIdRoute = RequestsIdRouteImport.update({
-  id: '/requests/$id',
+  id: '/requests_/$id',
   path: '/requests/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -65,9 +65,9 @@ export interface FileRoutesByFullPath {
   '/control-tower': typeof ControlTowerRoute
   '/governance': typeof GovernanceRoute
   '/monitoring': typeof MonitoringRoute
+  '/requests': typeof RequestsRoute
   '/vendors': typeof VendorsRoute
   '/requests/$id': typeof RequestsIdRoute
-  '/requests/': typeof RequestsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,9 +75,9 @@ export interface FileRoutesByTo {
   '/control-tower': typeof ControlTowerRoute
   '/governance': typeof GovernanceRoute
   '/monitoring': typeof MonitoringRoute
+  '/requests': typeof RequestsRoute
   '/vendors': typeof VendorsRoute
   '/requests/$id': typeof RequestsIdRoute
-  '/requests': typeof RequestsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,9 +86,9 @@ export interface FileRoutesById {
   '/control-tower': typeof ControlTowerRoute
   '/governance': typeof GovernanceRoute
   '/monitoring': typeof MonitoringRoute
+  '/requests': typeof RequestsRoute
   '/vendors': typeof VendorsRoute
-  '/requests/$id': typeof RequestsIdRoute
-  '/requests/': typeof RequestsIndexRoute
+  '/requests_/$id': typeof RequestsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,9 +98,9 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/governance'
     | '/monitoring'
+    | '/requests'
     | '/vendors'
     | '/requests/$id'
-    | '/requests/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,9 +108,9 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/governance'
     | '/monitoring'
+    | '/requests'
     | '/vendors'
     | '/requests/$id'
-    | '/requests'
   id:
     | '__root__'
     | '/'
@@ -118,9 +118,9 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/governance'
     | '/monitoring'
+    | '/requests'
     | '/vendors'
-    | '/requests/$id'
-    | '/requests/'
+    | '/requests_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,9 +129,9 @@ export interface RootRouteChildren {
   ControlTowerRoute: typeof ControlTowerRoute
   GovernanceRoute: typeof GovernanceRoute
   MonitoringRoute: typeof MonitoringRoute
+  RequestsRoute: typeof RequestsRoute
   VendorsRoute: typeof VendorsRoute
   RequestsIdRoute: typeof RequestsIdRoute
-  RequestsIndexRoute: typeof RequestsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/requests': {
+      id: '/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/monitoring': {
@@ -178,15 +185,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/requests/': {
-      id: '/requests/'
-      path: '/requests'
-      fullPath: '/requests/'
-      preLoaderRoute: typeof RequestsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/requests/$id': {
-      id: '/requests/$id'
+    '/requests_/$id': {
+      id: '/requests_/$id'
       path: '/requests/$id'
       fullPath: '/requests/$id'
       preLoaderRoute: typeof RequestsIdRouteImport
@@ -201,9 +201,9 @@ const rootRouteChildren: RootRouteChildren = {
   ControlTowerRoute: ControlTowerRoute,
   GovernanceRoute: GovernanceRoute,
   MonitoringRoute: MonitoringRoute,
+  RequestsRoute: RequestsRoute,
   VendorsRoute: VendorsRoute,
   RequestsIdRoute: RequestsIdRoute,
-  RequestsIndexRoute: RequestsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

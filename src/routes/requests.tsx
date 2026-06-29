@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useDemo } from "@/lib/store";
 import { ArrowRight } from "lucide-react";
 
-export const Route = createFileRoute("/requests/")({
+export const Route = createFileRoute("/requests")({
   head: () => ({ meta: [{ title: "Active Requests — Contract Intelligence" }] }),
   component: Requests,
 });
@@ -12,32 +12,52 @@ const requests = [
   {
     id: "ind-maint-sow",
     name: "Industrial Maintenance Services SOW",
-    type: "SOW · 3-year",
+    type: "Sourcing · SOW · 3-year",
     owner: "Procurement Buyer",
     requester: "Operations Manager",
-    value: "$2.4M",
-    due: "5 days",
+    value: "$2.4M est.",
     next: "Confirm recommended supplier",
+    status: "In Progress",
   },
   {
-    id: "logistics-renewal",
-    name: "Regional Logistics MSA Renewal",
-    type: "Renewal",
-    owner: "Procurement Buyer",
-    requester: "Supply Chain Dir.",
-    value: "$4.1M",
-    due: "12 days",
-    next: "Benchmark review",
-  },
-  {
-    id: "it-support",
-    name: "Tier 2 IT Field Support SOW",
+    id: "field-inspection-sow",
+    name: "Field Inspection Services SOW",
     type: "SOW · 2-year",
     owner: "Sourcing Lead",
-    requester: "IT Operations",
-    value: "$1.6M",
-    due: "9 days",
+    requester: "QA Director",
+    value: "$1.1M",
     next: "Evidence validation",
+    status: "In Review",
+  },
+  {
+    id: "emergency-gen-sow",
+    name: "Emergency Generator Maintenance SOW",
+    type: "Renewal · 2-year",
+    owner: "Procurement Buyer",
+    requester: "Facilities Mgr",
+    value: "$780K",
+    next: "Renewal review window",
+    status: "Renewal",
+  },
+  {
+    id: "electrical-repair",
+    name: "Electrical Repair Services Contract",
+    type: "MSA",
+    owner: "Sourcing Lead",
+    requester: "Plant Ops",
+    value: "$1.4M",
+    next: "Benchmark review",
+    status: "In Review",
+  },
+  {
+    id: "hvac-facilities",
+    name: "Facilities HVAC Services Contract",
+    type: "Renewal",
+    owner: "Procurement Buyer",
+    requester: "Facilities Mgr",
+    value: "$960K",
+    next: "Vendor risk review",
+    status: "Renewal",
   },
 ];
 
@@ -54,7 +74,7 @@ function Requests() {
               <th className="text-left px-4 py-2.5 font-medium">Owner</th>
               <th className="text-left px-4 py-2.5 font-medium">Value</th>
               <th className="text-left px-4 py-2.5 font-medium">Next action</th>
-              <th className="text-left px-4 py-2.5 font-medium">Klydo</th>
+              <th className="text-left px-4 py-2.5 font-medium">Status</th>
               <th></th>
             </tr>
           </thead>
@@ -66,8 +86,8 @@ function Requests() {
                   ? "Active — Execution"
                   : state.supplierConfirmed
                   ? "Evidence & Drafting"
-                  : "Supplier Review In Progress"
-                : "In Review";
+                  : "Supplier Review"
+                : r.status;
               return (
                 <tr key={r.id} className="border-t hover:bg-muted/30 transition">
                   <td className="px-4 py-3">
@@ -80,9 +100,7 @@ function Requests() {
                   <td className="px-4 py-3 text-xs">{r.owner}</td>
                   <td className="px-4 py-3 text-xs">{r.value}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.next}</td>
-                  <td className="px-4 py-3 text-xs">
-                    {isHero ? <span className="text-warning">2 open · 1 pending</span> : <span className="text-muted-foreground">1 open</span>}
-                  </td>
+                  <td className="px-4 py-3 text-xs">{r.status}</td>
                   <td className="px-4 py-3 text-right">
                     {isHero ? (
                       <Link to="/requests/$id" params={{ id: r.id }} className="inline-flex items-center gap-1 text-accent2 text-xs font-medium hover:underline">
@@ -98,6 +116,11 @@ function Requests() {
           </tbody>
         </table>
       </div>
+      {!state.supplierConfirmed && (
+        <p className="text-xs text-muted-foreground mt-3">
+          Hero request shows: Apex is incumbent/known, not selected. Open the workspace to confirm the recommended supplier.
+        </p>
+      )}
     </AppLayout>
   );
 }
