@@ -1,13 +1,5 @@
 import { useState } from "react";
 import { sourceArtifacts } from "@/lib/mock-data";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sidebar";
-// Use existing sheet
 import { Sheet as Drawer, SheetContent as DrawerContent, SheetHeader as DrawerHeader, SheetTitle as DrawerTitle } from "@/components/ui/sheet";
 import { FileText } from "lucide-react";
 
