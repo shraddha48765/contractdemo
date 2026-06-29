@@ -59,6 +59,18 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-risk: var(--risk);
+  --color-risk-foreground: var(--risk-foreground);
+  --color-source: var(--source);
+  --color-source-foreground: var(--source-foreground);
+  --color-source-border: var(--source-border);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-accent2: var(--accent2);
 }
 
 :root {
