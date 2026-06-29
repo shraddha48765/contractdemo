@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
+import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as MonitoringRouteImport } from './routes/monitoring'
 import { Route as GovernanceRouteImport } from './routes/governance'
 import { Route as ControlTowerRouteImport } from './routes/control-tower'
@@ -20,6 +21,11 @@ import { Route as RequestsIdRouteImport } from './routes/requests_.$id'
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestsRoute = RequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonitoringRoute = MonitoringRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/control-tower': typeof ControlTowerRoute
   '/governance': typeof GovernanceRoute
   '/monitoring': typeof MonitoringRoute
+  '/requests': typeof RequestsRoute
   '/vendors': typeof VendorsRoute
   '/requests/$id': typeof RequestsIdRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/control-tower': typeof ControlTowerRoute
   '/governance': typeof GovernanceRoute
   '/monitoring': typeof MonitoringRoute
+  '/requests': typeof RequestsRoute
   '/vendors': typeof VendorsRoute
   '/requests/$id': typeof RequestsIdRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/control-tower': typeof ControlTowerRoute
   '/governance': typeof GovernanceRoute
   '/monitoring': typeof MonitoringRoute
+  '/requests': typeof RequestsRoute
   '/vendors': typeof VendorsRoute
   '/requests_/$id': typeof RequestsIdRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/governance'
     | '/monitoring'
+    | '/requests'
     | '/vendors'
     | '/requests/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/governance'
     | '/monitoring'
+    | '/requests'
     | '/vendors'
     | '/requests/$id'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/governance'
     | '/monitoring'
+    | '/requests'
     | '/vendors'
     | '/requests_/$id'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   ControlTowerRoute: typeof ControlTowerRoute
   GovernanceRoute: typeof GovernanceRoute
   MonitoringRoute: typeof MonitoringRoute
+  RequestsRoute: typeof RequestsRoute
   VendorsRoute: typeof VendorsRoute
   RequestsIdRoute: typeof RequestsIdRoute
 }
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/requests': {
+      id: '/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/monitoring': {
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   ControlTowerRoute: ControlTowerRoute,
   GovernanceRoute: GovernanceRoute,
   MonitoringRoute: MonitoringRoute,
+  RequestsRoute: RequestsRoute,
   VendorsRoute: VendorsRoute,
   RequestsIdRoute: RequestsIdRoute,
 }
