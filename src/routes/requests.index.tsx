@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useDemo } from "@/lib/store";
 import { ArrowRight } from "lucide-react";
 
-export const Route = createFileRoute("/requests")({
+export const Route = createFileRoute("/requests/")({
   head: () => ({ meta: [{ title: "Active Requests — Contract Intelligence" }] }),
   component: Requests,
 });
