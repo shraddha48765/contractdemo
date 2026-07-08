@@ -78,14 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Home / My Work — Contract Intelligence" },
+      { name: "description", content: "Personalized procurement work queue for the Contract Intelligence workspace." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Home / My Work — Contract Intelligence" },
+      { property: "og:description", content: "Personalized procurement work queue for the Contract Intelligence workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Home / My Work — Contract Intelligence" },
+      { name: "twitter:description", content: "Personalized procurement work queue for the Contract Intelligence workspace." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b03e8f5-cc50-49b2-97cb-3bde01e2a2e6/id-preview-31cd77d1--9d7d6d1d-f2ff-481a-a307-50f1435b121b.lovable.app-1782769638968.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b03e8f5-cc50-49b2-97cb-3bde01e2a2e6/id-preview-31cd77d1--9d7d6d1d-f2ff-481a-a307-50f1435b121b.lovable.app-1782769638968.png" },
     ],
     links: [
       {
