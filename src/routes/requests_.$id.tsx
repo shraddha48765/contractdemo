@@ -696,8 +696,8 @@ function RedlineReview() {
       <div className="rounded-xl border bg-card p-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h3 className="text-sm font-semibold">Vendor redline review</h3>
-            <p className="text-xs text-muted-foreground">Upload Apex Redline v3 to trigger risk detection.</p>
+            <h3 className="text-sm font-semibold">Redline Intelligence & Fallback Review</h3>
+            <p className="text-xs text-muted-foreground">This does not replace the redlining workflow. It reuses prior redline history, accepted fallback positions, and approved clause guidance to support faster risk review.</p>
           </div>
           <div className="flex items-center gap-2">
             <input ref={fileRef} type="file" hidden onChange={(e) => handleFile(e.target.files?.[0])} />
