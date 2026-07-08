@@ -45,7 +45,7 @@ function Monitoring() {
   }
 
   return (
-    <AppLayout title="Execution Monitoring" subtitle="Is this signed contract being executed correctly?">
+    <AppLayout title="Execution Monitoring" subtitle="Post-Signature Enforcement of Sourced Terms.">
       <div className="rounded-xl border bg-card p-5 mb-4">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
@@ -116,6 +116,34 @@ function Monitoring() {
             <div className="text-xs text-muted-foreground mt-1">Renewal review opens 120 days before expiration.</div>
             <div className="mt-2"><SourceChip id="renewal-record" /></div>
           </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        <Card title="Contract-to-Invoice Validation">
+          <ul className="text-xs space-y-1.5">
+            <li className="rounded border p-2">Labor rate above approved rate card <span className="text-muted-foreground">· Exhibit C / C-1</span></li>
+            <li className="rounded border p-2">Materials markup exceeds allowed threshold <span className="text-muted-foreground">· Exhibit C-1</span></li>
+            <li className="rounded border p-2">Missing approved timesheet <span className="text-muted-foreground">· Exhibit C</span></li>
+            <li className="rounded border p-2">Invoice references wrong PO line <span className="text-muted-foreground">· Exhibit C</span></li>
+            <li className="rounded border p-2">Unauthorized charge <span className="text-muted-foreground">· Exhibit C</span></li>
+          </ul>
+        </Card>
+        <Card title="WRBS / Tax Cap / Reconciliation">
+          <ul className="text-xs space-y-1.5">
+            <li className="rounded border p-2 flex justify-between"><span>Tax-cap threshold reached</span><span className="text-warning">Route Finance review</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>WRBS variance detected</span><span className="text-warning">Request support</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Rebate/discount not passed through</span><span className="text-warning">Commercial benefit review</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Overcharge evidence available</span><span className="text-warning">Recovery workflow</span></li>
+          </ul>
+        </Card>
+        <Card title="SLA / Service Credit">
+          <ul className="text-xs space-y-1.5">
+            <li className="rounded border p-2 flex justify-between"><span>4-hour emergency response</span><span className="text-risk">Breach detected</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>95% monthly completion</span><span className="text-warning">Missed two consecutive months</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>1.5% service credit</span><span className="text-warning">Review triggered</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>CAP</span><span className="text-warning">Route Vendor Manager</span></li>
+          </ul>
         </Card>
       </div>
     </AppLayout>

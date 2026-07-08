@@ -29,8 +29,8 @@ export function AppLayout({ children, title, subtitle }: { children: ReactNode; 
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-md bg-accent2 grid place-items-center text-sidebar font-bold">CI</div>
             <div>
-              <div className="text-sm font-semibold leading-tight">Contract Intelligence</div>
-              <div className="text-[10px] text-sidebar-foreground/60">S2P · P2P workspace</div>
+              <div className="text-sm font-semibold leading-tight">Source-to-Contract Intelligence</div>
+              <div className="text-[10px] text-sidebar-foreground/60">Source-to-Procure workspace</div>
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function AppLayout({ children, title, subtitle }: { children: ReactNode; 
             </div>
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline-flex text-[10px] uppercase tracking-wider rounded-full border border-border bg-card px-2.5 py-1 text-muted-foreground">
-                Powered by Klydo Workflow Layer · Governance · AI Assistant
+                Source-to-Contract Intelligence · Klydo Workflow · Governance · AI Assistant
               </span>
               <Button onClick={() => setAiOpen((v) => !v)} variant={aiOpen ? "default" : "outline"} size="sm" className="gap-1.5">
                 <Sparkles className="h-4 w-4" /> AI Assistant

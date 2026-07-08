@@ -27,7 +27,7 @@ function ContractDocIntel() {
   }), [q, cat, all]);
 
   return (
-    <AppLayout title="Contract & Document Intelligence" subtitle="Searchable, governed contract and document knowledge.">
+    <AppLayout title="Contract & Document Intelligence" subtitle="From flat contract documents to structured sourcing intelligence.">
       <div className="rounded-xl border bg-card p-4 mb-4">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[220px]">
@@ -53,6 +53,17 @@ function ContractDocIntel() {
             <option>Approved</option>
             <option>Pending Legal Review</option>
           </select>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+          <span className="text-muted-foreground uppercase tracking-wide">Try:</span>
+          {[
+            "Show rate escalation clauses for maintenance services",
+            "Which contracts have change-order exposure?",
+            "Find WRBS/tax cap reconciliation terms",
+            "Show supplier redline history for service credits",
+          ].map((s) => (
+            <button key={s} onClick={() => setQ(s)} className="rounded border px-2 py-0.5 hover:bg-accent">{s}</button>
+          ))}
         </div>
       </div>
 
@@ -107,14 +118,18 @@ function RelationshipMap() {
   // Simple SVG node-link map centered on Apex SOW
   const center = { x: 200, y: 200, label: "Apex Industrial Maintenance SOW", id: "signed-sow" };
   const nodes = [
-    { x: 200, y: 40, label: "Apex Rate Card v2", id: "apex-rate-card-v2" },
-    { x: 350, y: 90, label: "Invoice INV-1842", id: "invoice-1842" },
-    { x: 380, y: 200, label: "SLA Logs Q1–Q2", id: "sla-logs" },
-    { x: 350, y: 310, label: "PO PO-7784", id: "po-7784" },
-    { x: 200, y: 360, label: "Change Order CO-014", id: "co-014" },
-    { x: 50, y: 310, label: "Apex Redline v3", id: "apex-redline-v3" },
-    { x: 20, y: 200, label: "Insurance Cert.", id: "apex-insurance" },
-    { x: 50, y: 90, label: "Technician Roster", id: "tech-cert-roster" },
+    { x: 200, y: 30, label: "Preamble", id: "preamble" },
+    { x: 320, y: 55, label: "Exhibit A-1", id: "exhibit-a1" },
+    { x: 380, y: 130, label: "Exhibit B-1", id: "exhibit-b1" },
+    { x: 385, y: 210, label: "Exhibit C", id: "exhibit-c" },
+    { x: 360, y: 290, label: "Exhibit C-1 / WRBS", id: "exhibit-c1" },
+    { x: 290, y: 350, label: "Exhibit D", id: "exhibit-d" },
+    { x: 200, y: 375, label: "Exhibit E", id: "exhibit-e" },
+    { x: 110, y: 350, label: "Exhibit G", id: "exhibit-g" },
+    { x: 40, y: 290, label: "Invoice INV-1842", id: "invoice-1842" },
+    { x: 15, y: 210, label: "SLA Logs", id: "sla-logs" },
+    { x: 20, y: 130, label: "Prior CO", id: "prior-change-order" },
+    { x: 80, y: 55, label: "Renewal Record", id: "renewal-record" },
   ];
 
   return (

@@ -11,7 +11,18 @@ export const Route = createFileRoute("/vendors")({
 
 function VendorIntel() {
   return (
-    <AppLayout title="Supplier / Vendor Intelligence" subtitle="Vendor 360 · Market Discovery · Competitive Benchmarking">
+    <AppLayout title="Vendor 360 + Governed Market Discovery" subtitle="Vendor 360 · Market Discovery · Competitive Benchmarking">
+      <div className="rounded-xl border bg-card p-4 mb-4">
+        <input
+          placeholder="Search vendors, categories, certifications, benchmark references, rate signals, and market intelligence"
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        />
+        <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
+          {["Internal supplier history","Prior contract benchmark","Approved market benchmark","HSSE / ISNetworld status","Insurance record","Public supplier profile","Buyer-approved reference"].map((c) => (
+            <span key={c} className="rounded bg-muted px-1.5 py-0.5">{c}</span>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {vendors.map((v) => (
           <div key={v.id} className="rounded-xl border bg-card p-5">
@@ -41,9 +52,15 @@ function VendorIntel() {
             {v.id === "elevate" && (
               <div className="mt-2 text-[10px] rounded bg-muted px-1.5 py-0.5 inline-block text-muted-foreground">External / Vendor-Published data — not internally verified</div>
             )}
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <button className="text-[11px] rounded-md border px-2 py-1 hover:bg-accent">Add to Supplier Shortlist</button>
+              <button className="text-[11px] rounded-md border px-2 py-1 hover:bg-accent">Compare Against Incumbent</button>
+              <button className="text-[11px] rounded-md border px-2 py-1 hover:bg-accent">Request Sourcing Validation</button>
+            </div>
           </div>
         ))}
       </div>
+      <p className="text-[11px] text-muted-foreground mt-3">External market references are governed by approved data sources and buyer validation.</p>
     </AppLayout>
   );
 }

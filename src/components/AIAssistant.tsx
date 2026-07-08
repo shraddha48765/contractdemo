@@ -48,9 +48,29 @@ const promptsByScreen: Record<string, Prompt[]> = {
   ],
   default: [
     {
-      q: "Summarize today's priority actions",
-      a: "You have an open supplier confirmation for the Industrial Maintenance Services SOW, a pending technician certification roster validation, and renewal reviews approaching the 120-day window for two contracts.",
-      sources: ["request-intake", "renewal-record"],
+      q: "Why is Apex recommended?",
+      a: "Apex is recommended because they are the incumbent with strong SLA history (96.8% completion, 3.6h response), low transition risk, and accepted the 3% escalation cap and 1.5% service credit conditions.",
+      sources: ["apex-rate-card-v2", "sla-logs", "approved-benchmark"],
+    },
+    {
+      q: "What value protection was identified?",
+      a: "Modeled value under control: $194.6K. Escalation exposure avoided $48K, scope-gap prevented $74K, invoice-rate variance flagged $18.6K, materials markup reviewed $12K, service credit opportunity $42K.",
+      sources: ["exhibit-c1", "exhibit-d", "prior-change-order", "invoice-1842"],
+    },
+    {
+      q: "Should this request trigger an RFP?",
+      a: "Not currently. Incumbent renewal + market check is recommended: Apex has low transition risk and accepted required commercial protections. RFP would trigger if escalation exceeds cap, SLA weakens, or pricing variance exceeds threshold.",
+      sources: ["category-playbook-ims", "approved-benchmark"],
+    },
+    {
+      q: "Which contract exhibits are required for this package?",
+      a: "Preamble, Exhibit A-1 (General T&Cs), Exhibit B-1 (Insurance & Indemnity), Exhibit C (Compensation), Exhibit C-1 (Pricing / WRBS), Exhibit D (Scope of Work), Exhibit E (HSSE), Exhibit G (Change Order Form).",
+      sources: ["preamble", "exhibit-a1", "exhibit-b1", "exhibit-c", "exhibit-c1", "exhibit-d", "exhibit-e", "exhibit-g"],
+    },
+    {
+      q: "What terms become monitoring rules after signature?",
+      a: "3% escalation cap → rate variance check; 4h SLA → SLA response monitor; 95% completion → completion tracking; 1.5% service credit → credit review trigger; >$25K change orders → approval gate; materials pass-through → markup validation.",
+      sources: ["exhibit-c1", "exhibit-d", "exhibit-c", "exhibit-g"],
     },
   ],
 };
