@@ -509,6 +509,7 @@ function EvidencePackTab() {
         </div>
       </div>
     </div>
+    </div>
   );
 }
 
