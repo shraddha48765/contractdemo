@@ -514,7 +514,45 @@ function EvidencePackTab() {
 }
 
 function ContractIntelTab() {
+  const extracted = [
+    { term: "3% escalation cap", source: "Exhibit C-1 / pricing logic", control: "pricing variance check", srcId: "exhibit-c1" },
+    { term: "4-hour emergency SLA", source: "Exhibit D", control: "SLA response monitoring", srcId: "exhibit-d" },
+    { term: "95% monthly completion target", source: "Exhibit D", control: "service completion rule", srcId: "exhibit-d" },
+    { term: "1.5% service credit", source: "Exhibit D / commercial terms", control: "service credit review", srcId: "exhibit-d" },
+    { term: "Change order approval above $25K", source: "Exhibit A-1 / Exhibit G", control: "change-order approval gate", srcId: "exhibit-g" },
+    { term: "Materials markup", source: "Exhibit C / Exhibit C-1", control: "markup validation", srcId: "exhibit-c1" },
+    { term: "Rebates / discounts pass-through", source: "Exhibit C", control: "commercial benefit check", srcId: "exhibit-c" },
+    { term: "Audit rights / overcharge recovery", source: "Exhibit A-1", control: "recovery evidence", srcId: "exhibit-a1" },
+  ];
   return (
+    <div className="space-y-4">
+    <div className="rounded-xl border bg-card p-5">
+      <h3 className="text-sm font-semibold mb-1">Extracted Terms → Business Controls</h3>
+      <p className="text-xs text-muted-foreground mb-3">Flat exhibit language becomes structured sourcing intelligence and post-signature monitoring rules.</p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="text-muted-foreground">
+            <tr>
+              <th className="text-left px-2 py-1.5 font-medium">Extracted term</th>
+              <th className="text-left px-2 py-1.5 font-medium">Source</th>
+              <th className="text-left px-2 py-1.5 font-medium">Control created</th>
+              <th className="text-left px-2 py-1.5 font-medium">Chip</th>
+            </tr>
+          </thead>
+          <tbody>
+            {extracted.map((r) => (
+              <tr key={r.term} className="border-t">
+                <td className="px-2 py-1.5 font-medium">{r.term}</td>
+                <td className="px-2 py-1.5 text-muted-foreground">{r.source}</td>
+                <td className="px-2 py-1.5">{r.control}</td>
+                <td className="px-2 py-1.5"><SourceChip id={r.srcId} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div className="rounded-xl border bg-card p-5">
       <h3 className="text-sm font-semibold mb-3">Recommendations</h3>
       <div className="space-y-2">
