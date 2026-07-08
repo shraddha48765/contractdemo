@@ -7,8 +7,8 @@ import { ArrowRight, CheckCircle2, AlertCircle, Clock3, Inbox } from "lucide-rea
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Home / My Work — Contract Intelligence" },
-      { name: "description", content: "Personalized procurement work queue for the Contract Intelligence workspace." },
+      { title: "Home / My Work — Source-to-Contract Intelligence" },
+      { name: "description", content: "Source-to-contract intelligence workspace with governed procurement work queue." },
     ],
   }),
   component: Home,
