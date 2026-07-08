@@ -578,6 +578,7 @@ function ContractIntelTab() {
         <Leak label="Escalation cap risk" value="3% capped" />
       </div>
     </div>
+    </div>
   );
 }
 
