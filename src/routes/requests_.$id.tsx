@@ -607,24 +607,63 @@ function DraftSOW() {
     { h: "10. Renewal", c: "120-day renewal review window prior to expiration." },
   ];
   return (
-    <div className="rounded-xl border bg-card p-5 max-w-3xl">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold">Draft SOW</h3>
-          <p className="text-xs text-muted-foreground">Generated from approved template + governed evidence.</p>
-        </div>
-        {!state.supplierConfirmed && (
-          <span className="text-[11px] rounded bg-warning/15 text-warning px-2 py-0.5">Awaiting supplier confirmation</span>
-        )}
-      </div>
-      <div className="space-y-3">
-        {sections.map((s) => (
-          <div key={s.h} className="border-l-2 border-accent2/40 pl-3">
-            <div className="text-xs font-semibold">{s.h}</div>
-            <div className="text-sm text-muted-foreground mt-0.5">{s.c}</div>
-            {s.src && <div className="mt-1"><SourceChip id={s.src} /></div>}
+    <div className="space-y-4 max-w-3xl">
+      <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
+          <div className="flex-1">
+            <div className="text-sm font-semibold">Prior Scope Gap Prevented</div>
+            <p className="text-xs mt-0.5">Prior change order showed weekend emergency coverage was added after award. The new Exhibit D draft includes weekend emergency coverage upfront.</p>
+            <div className="text-xs mt-1 font-medium text-warning">$74K modeled change-order exposure prevented</div>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              <SourceChip id="prior-change-order" />
+              <SourceChip id="exhibit-d" />
+            </div>
           </div>
-        ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4">
+        <div className="text-xs font-semibold mb-2">Generated from</div>
+        <div className="flex flex-wrap gap-1.5 text-[11px]">
+          {[
+            ["Prior Exhibit D / Scope of Work","exhibit-d"],
+            ["Supplier response comparison",""],
+            ["Approved clause library","service-credit-clause"],
+            ["Prior change orders","prior-change-order"],
+            ["HSSE requirements","exhibit-e"],
+            ["Pricing / WRBS references","exhibit-c1"],
+            ["SLA playbook","category-playbook-ims"],
+          ].map(([label, id]) => (
+            <span key={label} className="rounded border px-2 py-0.5">{label}</span>
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1">
+          <SourceChip id="prior-change-order" />
+          <SourceChip id="exhibit-d" />
+          <SourceChip id="apex-rate-card-v2" />
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold">Draft SOW / Exhibit D Builder</h3>
+            <p className="text-xs text-muted-foreground">Generated from approved template + governed evidence.</p>
+          </div>
+          {!state.supplierConfirmed && (
+            <span className="text-[11px] rounded bg-warning/15 text-warning px-2 py-0.5">Awaiting supplier confirmation</span>
+          )}
+        </div>
+        <div className="space-y-3">
+          {sections.map((s) => (
+            <div key={s.h} className="border-l-2 border-accent2/40 pl-3">
+              <div className="text-xs font-semibold">{s.h}</div>
+              <div className="text-sm text-muted-foreground mt-0.5">{s.c}</div>
+              {s.src && <div className="mt-1"><SourceChip id={s.src} /></div>}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
