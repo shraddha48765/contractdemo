@@ -854,6 +854,27 @@ function SignatureActivation() {
         </div>
       </div>
 
+      <div className="rounded-xl border bg-card p-5">
+        <h3 className="text-sm font-semibold mb-2">Obligation-to-Control Activation</h3>
+        <ul className="text-xs space-y-1.5">
+          {[
+            ["3% escalation cap", "rate increase check"],
+            ["4-hour emergency SLA", "SLA response monitoring"],
+            ["95% monthly completion", "service completion tracking"],
+            ["1.5% service credit", "credit review trigger"],
+            ["Change order approval >$25K", "approval gate"],
+            ["Materials pass-through", "markup / invoice validation"],
+            ["Rebates / discounts", "commercial benefit check"],
+          ].map(([o, c]) => (
+            <li key={o} className="flex items-center justify-between rounded border p-2">
+              <span>{o}</span>
+              <span className="text-muted-foreground">→ {c}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+
       <div className="rounded-xl border bg-card p-5 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-semibold">Contract activation</div>
