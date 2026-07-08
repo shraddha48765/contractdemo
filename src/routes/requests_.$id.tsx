@@ -423,7 +423,53 @@ function SupplierReview() {
 
 function EvidencePackTab() {
   const { state } = useDemo();
+  const packageRows = [
+    { n: "Preamble / Master Agreement", status: "Ready", intel: "parties, term, value, authorized reps", id: "preamble" },
+    { n: "Exhibit A-1 General T&Cs", status: "Applied", intel: "change orders, audit rights, records, overcharge recovery", id: "exhibit-a1" },
+    { n: "Exhibit B-1 Insurance & Indemnity", status: "Applied", intel: "insurance limits, indemnity, additional insured", id: "exhibit-b1" },
+    { n: "Exhibit C Compensation & Invoicing", status: "Applied", intel: "payment method, invoices, timesheets, discounts/rebates", id: "exhibit-c" },
+    { n: "Exhibit C-1 Pricing / WRBS", status: "Applied", intel: "pricing review, markup, escalation, rate controls", id: "exhibit-c1" },
+    { n: "Exhibit D Scope of Work", status: "Drafting", intel: "services, SLA, scope-gap insertions", id: "exhibit-d" },
+    { n: "Exhibit E HSSE Requirements", status: "Applied", intel: "safety, training, permits, H2S, TWIC", id: "exhibit-e" },
+    { n: "Exhibit G Change Order Form", status: "Applied", intel: "formal change order process", id: "exhibit-g" },
+  ];
   return (
+    <div className="space-y-4">
+    <div className="rounded-xl border bg-card p-5">
+      <h3 className="text-sm font-semibold mb-1">Contract Package Evidence Pack — Contract Package Builder</h3>
+      <p className="text-xs text-muted-foreground mb-3">Exhibit-based structure with governed intelligence extraction.</p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs min-w-[600px]">
+          <thead className="text-muted-foreground">
+            <tr>
+              <th className="text-left px-2 py-1.5 font-medium">Exhibit</th>
+              <th className="text-left px-2 py-1.5 font-medium">Status</th>
+              <th className="text-left px-2 py-1.5 font-medium">Intelligence extracted</th>
+              <th className="text-left px-2 py-1.5 font-medium">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {packageRows.map((r) => (
+              <tr key={r.id} className="border-t">
+                <td className="px-2 py-1.5 font-medium">{r.n}</td>
+                <td className="px-2 py-1.5">
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] ${r.status === "Applied" ? "bg-success/15 text-success" : r.status === "Drafting" ? "bg-warning/15 text-warning" : "bg-accent2/15 text-accent2"}`}>{r.status}</span>
+                </td>
+                <td className="px-2 py-1.5 text-muted-foreground">{r.intel}</td>
+                <td className="px-2 py-1.5"><SourceChip id={r.id} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1 text-[10px]">
+        <span className="text-muted-foreground uppercase tracking-wide">Package sources:</span>
+        {["GEP","OpenText","SAP","Supplier Submission","Internal Template Library","Buyer Upload"].map((s) => (
+          <span key={s} className="rounded bg-muted px-1.5 py-0.5">{s}</span>
+        ))}
+      </div>
+    </div>
+
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 rounded-xl border bg-card p-5">
         <h3 className="text-sm font-semibold mb-3">Included evidence</h3>
