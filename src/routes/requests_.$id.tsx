@@ -822,6 +822,7 @@ function ApprovalsHistory() {
         </tbody>
       </table>
     </div>
+    </div>
   );
 }
 
