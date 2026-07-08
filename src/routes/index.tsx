@@ -24,7 +24,8 @@ function Home() {
   const waitingOnOthers = state.klydoTasks.filter((t) => t.owner !== "Procurement Buyer" && t.status !== "Completed" && t.status !== "Resolved" && t.status !== "Approved");
 
   return (
-    <AppLayout title="Home / My Work" subtitle="Welcome back — your governed procurement queue.">
+    <AppLayout title="Home / My Work" subtitle="Source-to-Contract Intelligence Workspace — your governed procurement queue.">
+      <NewRequestReceived />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <StatCard icon={<Inbox className="h-4 w-4" />} label="Actions waiting on me" value={actionsWaiting.length} tone="brand" />
         <StatCard icon={<CheckCircle2 className="h-4 w-4" />} label="Approvals waiting on me" value={approvalsWaiting.length} tone="warning" />
@@ -113,4 +114,36 @@ function Section({ title, count, children, className = "" }: { title: string; co
 
 function Empty({ text }: { text: string }) {
   return <div className="text-xs text-muted-foreground py-2">{text}</div>;
+}
+
+function NewRequestReceived() {
+  return (
+    <div className="rounded-xl border border-accent2/40 bg-accent2/5 p-4 mb-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[280px]">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider rounded-full bg-accent2/20 text-accent2 px-2 py-0.5 font-semibold">New Request Received</span>
+            <span className="text-[11px] text-muted-foreground">REQ-IMS-2026-014</span>
+          </div>
+          <h2 className="text-base font-semibold mt-1.5">Industrial Maintenance Services Renewal – 2026</h2>
+          <dl className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 mt-3 text-xs">
+            <div><dt className="text-muted-foreground">Requester</dt><dd>Operations Manager</dd></div>
+            <div><dt className="text-muted-foreground">Category</dt><dd>Industrial Maintenance Services</dd></div>
+            <div><dt className="text-muted-foreground">Procurement Type</dt><dd>Service + Materials Pass-through</dd></div>
+            <div><dt className="text-muted-foreground">Estimated Value</dt><dd>$2.4M / 3 years</dd></div>
+            <div><dt className="text-muted-foreground">Incumbent Vendor</dt><dd>Apex Industrial Services</dd></div>
+            <div><dt className="text-muted-foreground">Trigger</dt><dd>120-day renewal review window</dd></div>
+          </dl>
+          <p className="text-[11px] text-muted-foreground mt-2">Initial Klydo action: Apply sourcing blueprint</p>
+        </div>
+        <Link
+          to="/requests/$id"
+          params={{ id: "ind-maint-sow" }}
+          className="inline-flex items-center gap-1 rounded-md bg-accent2 text-white text-xs font-medium px-3 py-2 hover:opacity-90 transition self-start"
+        >
+          Open Active Request <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+    </div>
+  );
 }

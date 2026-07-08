@@ -307,6 +307,73 @@ export const sourceArtifacts: Record<string, SourceArtifact> = {
     confidence: "High",
     summary: "Auto-tracked 120-day renewal review window.",
   },
+  "preamble": {
+    id: "preamble", name: "Preamble / Master Agreement", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package"], confidence: "High",
+    summary: "Master Agreement preamble: parties, term, value, authorized reps.",
+  },
+  "exhibit-a1": {
+    id: "exhibit-a1", name: "Exhibit A-1 General T&Cs", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package", "Contract Intelligence"], confidence: "High",
+    summary: "General terms: change orders, audit rights, records, overcharge recovery.",
+  },
+  "exhibit-b1": {
+    id: "exhibit-b1", name: "Exhibit B-1 Insurance & Indemnity", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package"], confidence: "High",
+    summary: "Insurance limits, indemnity, additional-insured requirements.",
+  },
+  "exhibit-c": {
+    id: "exhibit-c", name: "Exhibit C Compensation & Invoicing", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package", "Execution Monitoring"], confidence: "High",
+    summary: "Payment method, invoices, timesheets, discounts, rebates pass-through.",
+  },
+  "exhibit-c1": {
+    id: "exhibit-c1", name: "Exhibit C-1 Pricing Schedule / WRBS", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package", "Execution Monitoring"], confidence: "High",
+    summary: "Pricing review, markup rules, escalation caps, rate controls.",
+  },
+  "exhibit-d": {
+    id: "exhibit-d", name: "Exhibit D Scope of Work", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Draft", lastUpdated: "2026-06-25",
+    whereUsed: ["Contract Package", "Draft SOW"], confidence: "High",
+    summary: "Services, SLA, scope-gap insertions, weekend emergency coverage.",
+  },
+  "exhibit-e": {
+    id: "exhibit-e", name: "Exhibit E HSSE Requirements", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package"], confidence: "High",
+    summary: "Safety, training, permits, H2S, TWIC.",
+  },
+  "exhibit-g": {
+    id: "exhibit-g", name: "Exhibit G Change Order Form", type: "Approved Template", category: "Contract Package",
+    sourceSystem: "Internal Template Library", governanceStatus: "Approved", lastUpdated: "2026-01-01",
+    whereUsed: ["Contract Package", "Execution Monitoring"], confidence: "High",
+    summary: "Formal change-order process and approval routing.",
+  },
+  "prior-change-order": {
+    id: "prior-change-order", name: "Prior Change Order — Weekend Coverage", type: "Internal Governed",
+    category: "Change Orders", sourceSystem: "Contract & Document Intelligence", governanceStatus: "Approved",
+    lastUpdated: "2025-09-14", linkedVendor: "Apex Industrial Services",
+    whereUsed: ["Draft SOW", "Supplier Review"], confidence: "High",
+    summary: "Prior change order added weekend emergency coverage after award. $74K modeled exposure prevented.",
+  },
+  "category-playbook-ims": {
+    id: "category-playbook-ims", name: "Industrial Maintenance Services Playbook", type: "Approved Template",
+    category: "Category Playbooks", sourceSystem: "Knowledge & Governance", governanceStatus: "Approved",
+    lastUpdated: "2026-02-01", whereUsed: ["Request Summary", "Supplier Review"], confidence: "High",
+    summary: "Sourcing playbook: labor rates, escalation, SLA, HSSE, materials pass-through benchmarks.",
+  },
+  "approved-benchmark": {
+    id: "approved-benchmark", name: "Approved Benchmark Source", type: "Internal Governed",
+    category: "Benchmark Data", sourceSystem: "Supplier Intelligence", governanceStatus: "Approved",
+    lastUpdated: "2026-04-30", whereUsed: ["Supplier Review", "Vendor Intelligence"], confidence: "High",
+    summary: "Buyer-approved market benchmark reference for labor rates and SLA norms.",
+  },
 };
 
 export type VendorStatus =
@@ -531,7 +598,7 @@ export interface KlydoTask {
   title: string;
   type: string;
   owner: string;
-  status: "Open" | "In Review" | "Completed" | "Approved" | "Resolved" | "Overdue" | "Pending";
+  status: "Open" | "In Review" | "Completed" | "Approved" | "Resolved" | "Overdue" | "Pending" | "Ready";
   due: string;
   priority: "Low" | "Medium" | "High";
   relatedVendor?: string;
@@ -543,6 +610,19 @@ export interface KlydoTask {
 }
 
 export const seedKlydoTasks: KlydoTask[] = [
+  {
+    id: "k0",
+    title: "Apply sourcing strategy for Industrial Maintenance Services Renewal – 2026",
+    type: "Sourcing Strategy",
+    owner: "Procurement Buyer",
+    status: "Ready",
+    due: "Today",
+    priority: "High",
+    relatedRequest: "ind-maint-sow",
+    sourceArtifact: "category-playbook-ims",
+    audit: [{ ts: "2026-06-25 08:55", actor: "System", action: "Blueprint applied on intake" }],
+    createdBy: "seed",
+  },
   {
     id: "k1",
     title: "Confirm recommended supplier",
@@ -711,6 +791,21 @@ export const initialKpis = {
   changeOrdersPending: 5,
   serviceCreditsAtRisk: "$42K",
   overdueKlydo: 7,
+  valueUnderControl: "$194.6K",
+  s2cCycleCurrent: 100,
+  s2cCycleTarget: 60,
+  activeSourcingDecisions: 18,
+  rfpTriggerReviews: 6,
+  contractPackagesGenerated: 12,
+  invoiceExceptionsFlagged: "$18.6K",
+  reconciliationExposure: "$42K",
+  renewalRiskContracts: 4,
+  valueProtection: {
+    sourceToProcureAvoided: "$122K",
+    procureToPayExceptions: "$30.6K",
+    slaServiceCreditOpportunity: "$42K",
+    totalUnderControl: "$194.6K",
+  },
 };
 
 export const vendorChecklist = [

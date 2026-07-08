@@ -37,17 +37,46 @@ function RequestWorkspace() {
     : "Supplier Review In Progress";
 
   return (
-    <AppLayout title="Industrial Maintenance Services SOW" subtitle="3-year sourcing package · $2.4M estimated · Operations Manager">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <AppLayout title="Industrial Maintenance Services Renewal – 2026" subtitle="REQ-IMS-2026-014 · 3-year renewal · $2.4M · Apex Industrial Services">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2 text-xs">
           <Link to="/requests" className="text-muted-foreground hover:text-foreground">Active Requests</Link>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
-          <span className="font-medium">Industrial Maintenance Services SOW</span>
+          <span className="font-medium">Industrial Maintenance Services Renewal – 2026</span>
           <span className="ml-3 rounded-full bg-accent2/15 text-accent2 px-2 py-0.5 font-medium">{status}</span>
         </div>
         <Button variant="outline" size="sm" onClick={() => setVendorPanelOpen(true)} className="gap-1.5">
           <MessageSquareText className="h-4 w-4" /> Vendor Exchange Panel
         </Button>
+      </div>
+
+      {/* Blueprint strip */}
+      <div className="rounded-xl border border-accent2/30 bg-accent2/5 p-3 mb-3">
+        <div className="text-[10px] uppercase tracking-wider text-accent2 font-semibold mb-1.5">Blueprint Applied: Source-to-Contract Intelligence Lifecycle</div>
+        <div className="flex items-center gap-1 overflow-x-auto text-[11px] text-muted-foreground">
+          {["Intake","Category Strategy","Market Discovery","RFP Decision","Supplier Shortlist","Bid/SOW Comparison","Award Recommendation","Contract Package","Approval","Signature","Monitor","Reconcile","Renew"].map((s, i, arr) => (
+            <span key={s} className="shrink-0 flex items-center gap-1">
+              <span>{s}</span>
+              {i < arr.length - 1 && <span className="text-muted-foreground/40">→</span>}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Status chips */}
+      <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
+        {[
+          ["Category", "Industrial Maintenance Services"],
+          ["Procurement Model", "Service + Materials Pass-through"],
+          ["Sourcing Path", "Incumbent Renewal + Market Check"],
+          ["RFP Trigger", "Not Required Currently"],
+          ["Primary Vendor", "Apex Industrial Services"],
+          ["Value Under Control", "$194.6K Modeled"],
+        ].map(([k, v]) => (
+          <span key={k} className="rounded-full border px-2 py-0.5 bg-card">
+            <span className="text-muted-foreground">{k}:</span> <span className="font-medium">{v}</span>
+          </span>
+        ))}
       </div>
 
       {/* Klydo progress strip */}
@@ -100,6 +129,42 @@ function RequestWorkspace() {
 function RequestSummary() {
   const { state } = useDemo();
   return (
+    <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="rounded-xl border bg-card p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold">Category Strategy Applied</h3>
+          <SourceChip id="category-playbook-ims" />
+        </div>
+        <dl className="text-xs space-y-1.5">
+          <div><dt className="text-muted-foreground inline">Procurement type: </dt><dd className="inline">Service procurement with materials pass-through</dd></div>
+          <div><dt className="text-muted-foreground inline">Sourcing playbook: </dt><dd className="inline">Industrial Maintenance Services Renewal</dd></div>
+          <div><dt className="text-muted-foreground inline">Primary benchmarks: </dt><dd className="inline">labor rates, escalation, SLA response, service completion, HSSE, certifications, change-order exposure</dd></div>
+          <div><dt className="text-muted-foreground inline">Secondary benchmarks: </dt><dd className="inline">materials pass-through, markup, invoice support</dd></div>
+          <div><dt className="text-muted-foreground inline">Not primary for this request: </dt><dd className="inline">inventory turns, warehouse carrying cost, commodity stockout risk</dd></div>
+          <div><dt className="text-muted-foreground inline">Buyer decision needed: </dt><dd className="inline font-medium">Confirm sourcing path</dd></div>
+        </dl>
+        <p className="text-[11px] text-muted-foreground border-t pt-2">
+          For material procurement, benchmark criteria would shift to unit price, lead time, freight, quality/spec compliance, inventory availability, warranty, volume discount, manufacturer price-change evidence, substitution risk, and supplier delivery reliability.
+        </p>
+      </div>
+
+      <div className="rounded-xl border bg-card p-5 space-y-2">
+        <h3 className="text-sm font-semibold">Value Protection Summary</h3>
+        <ul className="text-xs space-y-1">
+          <li className="flex justify-between rounded border p-2"><span>Escalation exposure avoided</span><span className="font-medium">$48K</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Scope-gap exposure prevented</span><span className="font-medium">$74K</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Invoice-rate variance flagged</span><span className="font-medium">$18.6K</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Materials markup exposure reviewed</span><span className="font-medium">$12K</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Service credit opportunity</span><span className="font-medium">$42K</span></li>
+          <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K</span></li>
+        </ul>
+        <p className="text-[11px] text-muted-foreground pt-1">
+          Demo seed values. Production values would calculate from approved contract terms, historical spend, supplier data, invoices, and performance records.
+        </p>
+      </div>
+    </div>
+
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 rounded-xl border bg-card p-5 space-y-4">
         <div>
@@ -138,6 +203,7 @@ function RequestSummary() {
         )}
       </div>
     </div>
+    </div>
   );
 }
 
@@ -163,18 +229,17 @@ function KlydoWorkflow() {
   const { state } = useDemo();
   const requestTasks = state.klydoTasks.filter((t) => t.relatedRequest === "ind-maint-sow");
   const steps = [
-    "Request intake",
-    "Supplier review",
-    "Evidence pack validation",
-    "Vendor documentation review",
-    "Draft SOW",
-    "Redline review",
-    "Legal review",
-    "Finance review",
-    "Procurement manager approval",
-    "Signature",
-    "Activation",
-    "Post-activation monitoring setup",
+    "Intake received",
+    "Category strategy applied",
+    "Sourcing path review",
+    "RFP trigger check",
+    "Supplier shortlist",
+    "Bid / SOW response comparison",
+    "Award recommendation",
+    "Contract package build",
+    "Legal / Finance / Business approvals",
+    "Signature & activation",
+    "Execution monitoring",
   ];
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -212,6 +277,81 @@ function SupplierReview() {
   const cmp = vendors.slice(0, 3);
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-5 space-y-2">
+        <h3 className="text-sm font-semibold">Supplier Review & Sourcing Strategy</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div className="rounded-lg border p-3 space-y-1">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sourcing Path Recommendation</div>
+            <div><span className="text-muted-foreground">Recommended path:</span> Incumbent renewal with competitive market check</div>
+            <div><span className="text-muted-foreground">Full RFP required?</span> Not currently required</div>
+            <div><span className="text-muted-foreground">Why:</span> Apex is incumbent, lower transition risk; pricing and scope protections required</div>
+            <div><span className="text-muted-foreground">Trigger RFP if:</span> escalation exceeds cap, SLA weakens, pricing variance exceeds threshold, or risk score increases</div>
+            <div className="text-warning">Klydo action: Procurement Manager approval required</div>
+          </div>
+          <div className="rounded-lg border p-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Supplier Shortlist</div>
+            <ul className="space-y-1">
+              <li className="flex justify-between"><span>Apex Industrial Services</span><span className="text-success">Incumbent · Recommended with conditions</span></li>
+              <li className="flex justify-between"><span>Northstar Maintenance Group</span><span className="text-muted-foreground">Historical alternate · Benchmark reference</span></li>
+              <li className="flex justify-between"><span>Elevate Field Services</span><span className="text-muted-foreground">New vendor · Market comparison</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="px-4 py-3 border-b text-sm font-semibold">Bid / SOW Response Comparison</div>
+        <table className="w-full text-xs">
+          <thead className="bg-muted/60 text-muted-foreground">
+            <tr>
+              <th className="text-left px-3 py-2 font-medium">Dimension</th>
+              <th className="text-left px-3 py-2 font-medium">Apex</th>
+              <th className="text-left px-3 py-2 font-medium">Northstar</th>
+              <th className="text-left px-3 py-2 font-medium">Elevate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              ["Labor escalation", "5% proposed → 3% recommended", "3%", "3%"],
+              ["Emergency SLA", "4 hours", "6 hours", "4 hours"],
+              ["Completion target", "95%", "93%", "95%"],
+              ["Scope exceptions", "Weekend coverage clarification needed", "Prior gaps", "Clean but untested"],
+              ["HSSE readiness", "Strong", "Moderate", "Needs onboarding"],
+              ["Transition risk", "Low", "Medium", "High"],
+              ["Commercial fit", "Medium", "Medium", "Medium-high"],
+            ].map((r) => (
+              <tr key={r[0]} className="border-t">
+                {r.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "text-muted-foreground" : ""}`}>{c}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-xl border bg-card p-5">
+        <h3 className="text-sm font-semibold mb-2">Recommended Award Direction</h3>
+        <p className="text-xs mb-2 font-medium text-accent2">Conditional award to Apex Industrial Services</p>
+        <p className="text-[11px] text-muted-foreground mb-2">Required conditions:</p>
+        <ul className="text-xs space-y-1 list-disc list-inside">
+          <li>Apply 3% annual escalation cap</li>
+          <li>Restore 4-hour emergency response SLA</li>
+          <li>Maintain 95% monthly service completion target</li>
+          <li>Add 1.5% service credit if SLA target is missed for two consecutive months</li>
+          <li>Insert prior change-order scope item into Exhibit D</li>
+          <li>Require approval for change orders above $25K</li>
+          <li>Validate materials pass-through and markup rules</li>
+        </ul>
+      </div>
+
+      <div className="rounded-xl border bg-card p-5">
+        <h3 className="text-sm font-semibold mb-2">Source-to-Procure Value Protection</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Escalation exposure avoided</div><div className="font-semibold mt-0.5">$48K</div></div>
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Scope-gap exposure prevented</div><div className="font-semibold mt-0.5">$74K</div></div>
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Award risk avoided (HSSE/site readiness)</div><div className="font-semibold mt-0.5">Qualitative</div></div>
+        </div>
+      </div>
+
       {!state.supplierConfirmed ? (
         <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">

@@ -12,6 +12,7 @@ const statusStyles: Record<KlydoTask["status"], string> = {
   Resolved: "bg-success/15 text-success",
   Overdue: "bg-risk/15 text-risk",
   Pending: "bg-muted text-muted-foreground",
+  Ready: "bg-accent2/15 text-accent2",
 };
 
 const priorityStyles: Record<KlydoTask["priority"], string> = {
