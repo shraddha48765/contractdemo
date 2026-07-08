@@ -751,7 +751,41 @@ function ApprovalsHistory() {
     { k: "procurement", label: "Procurement Manager approval", owner: "Procurement Manager" },
     { k: "signatory", label: "Authorized Signatory readiness", owner: "Authorized Signatory" },
   ];
+  const decisionLog = [
+    ["Procurement type", "Service + materials pass-through", "Accepted", "success"],
+    ["Sourcing path", "Incumbent renewal + market check", "Pending manager approval", "warning"],
+    ["RFP trigger", "Not required currently", "Accepted", "success"],
+    ["Award direction", "Conditional Apex renewal", "Pending approval", "warning"],
+    ["Escalation cap", "3% max", "Finance review", "warning"],
+    ["Scope-gap insertion", "Include weekend emergency coverage", "Business SME review", "warning"],
+    ["Downstream flag", "Require human validation", "Accepted", "success"],
+  ] as const;
   return (
+    <div className="space-y-4">
+    <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b text-sm font-semibold">Decision Log / Buyer Override</div>
+      <table className="w-full text-xs">
+        <thead className="bg-muted/60 text-muted-foreground">
+          <tr>
+            <th className="text-left px-4 py-2 font-medium">Decision</th>
+            <th className="text-left px-4 py-2 font-medium">Recommendation</th>
+            <th className="text-left px-4 py-2 font-medium">Human action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {decisionLog.map(([d, rec, act, tone]) => (
+            <tr key={d} className="border-t">
+              <td className="px-4 py-2 font-medium">{d}</td>
+              <td className="px-4 py-2 text-muted-foreground">{rec}</td>
+              <td className="px-4 py-2">
+                <span className={`rounded-full px-2 py-0.5 font-medium ${tone === "success" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>{act}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
     <div className="rounded-xl border bg-card overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/60 text-xs text-muted-foreground">
