@@ -13,7 +13,7 @@ export const Route = createFileRoute("/monitoring")({
 });
 
 function Monitoring() {
-  const { state, uploadInvoice } = useDemo();
+  const { state, uploadInvoice, activateContract } = useDemo();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
