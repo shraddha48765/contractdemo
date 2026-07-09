@@ -230,6 +230,30 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ValueProtectionRow({ label, value, sources, calc }: { label: string; value: string; sources: string[]; calc: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="rounded border p-2">
+      <div className="flex items-center justify-between gap-2">
+        <span>{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{value}</span>
+          <button onClick={() => setOpen((o) => !o)} className="text-[10px] text-accent2 hover:underline">
+            {open ? "Hide" : "View calculation"}
+          </button>
+        </div>
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {sources.map((s) => <SourceChip key={s} id={s} />)}
+      </div>
+      {open && (
+        <div className="mt-1.5 rounded bg-muted/40 p-2 text-[11px] text-muted-foreground">{calc}</div>
+      )}
+    </li>
+  );
+}
+
+
 function SupplierLine({ name, tag, highlight }: { name: string; tag: string; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between">
