@@ -12,6 +12,9 @@ export const Route = createFileRoute("/vendors")({
 function VendorIntel() {
   return (
     <AppLayout title="Vendor 360 + Governed Market Discovery" subtitle="Vendor 360 · Market Discovery · Competitive Benchmarking">
+      <div className="rounded-xl border border-accent2/30 bg-accent2/5 p-3 mb-3 text-[11px] text-foreground">
+        <span className="font-semibold text-accent2">Governance:</span> Market references are sourced from approved internal/external sources and require buyer validation before use in sourcing decisions.
+      </div>
       <div className="rounded-xl border bg-card p-4 mb-4">
         <input
           placeholder="Search vendors, categories, certifications, benchmark references, rate signals, and market intelligence"
@@ -22,7 +25,9 @@ function VendorIntel() {
             <span key={c} className="rounded bg-muted px-1.5 py-0.5">{c}</span>
           ))}
         </div>
+        <p className="text-[10px] text-muted-foreground mt-2">External / vendor-published data is not internally verified until buyer validation.</p>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {vendors.map((v) => (
           <div key={v.id} className="rounded-xl border bg-card p-5">
