@@ -1,161 +1,123 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
-import { useDemo } from "@/lib/store";
-import { portfolioContracts } from "@/lib/mock-data";
-import { TrendingDown, AlertCircle, Clock, Activity, DollarSign, Wrench, FileWarning } from "lucide-react";
 
 export const Route = createFileRoute("/control-tower")({
   head: () => ({ meta: [{ title: "Control Tower — Contract Intelligence" }] }),
   component: ControlTower,
 });
 
+const KPIS: { label: string; value: string }[] = [
+  { label: "Active Contract Value", value: "$18.7M" },
+  { label: "Value Under Control", value: "$194.6K Modeled" },
+  { label: "Source-to-Contract Cycle Opportunity", value: "100 days → 60-day target" },
+  { label: "Active Sourcing Decisions", value: "18" },
+  { label: "RFP Trigger Reviews", value: "6" },
+  { label: "Contract Packages Generated", value: "12" },
+  { label: "Invoice Exceptions Flagged", value: "$18.6K" },
+  { label: "Reconciliation Exposure", value: "$42K" },
+  { label: "Renewal Risk Contracts", value: "4" },
+  { label: "Overdue Klydo Actions", value: "7" },
+];
+
+const VALUE_PROTECTION: { area: string; amount: string; status: string }[] = [
+  { area: "Source-to-procure avoided exposure", amount: "$122K", status: "Modeled" },
+  { area: "Procure-to-pay exceptions", amount: "$30.6K", status: "In Review" },
+  { area: "SLA/service credit opportunity", amount: "$42K", status: "Review Triggered" },
+  { area: "Total modeled value under control", amount: "$194.6K", status: "Portfolio Rollup" },
+];
+
+const WORKLOAD: { metric: string; count: string; notes: string }[] = [
+  { metric: "Contracts under review this quarter", count: "100+", notes: "Demo workload context" },
+  { metric: "RFXs / sourcing events under review this quarter", count: "250", notes: "Demo workload context" },
+  { metric: "Renewal windows under 120 days", count: "6", notes: "Needs review" },
+  { metric: "High-risk service packages", count: "4", notes: "Requires governance attention" },
+];
+
+const ALERTS: { alert: string; owner: string; status: string }[] = [
+  { alert: "Apex invoice-rate variance requires Finance review", owner: "Finance / Cost Control", status: "Open" },
+  { alert: "SLA service credit review triggered", owner: "Contract Owner", status: "Review Required" },
+  { alert: "Renewal risk window approaching for 4 contracts", owner: "Vendor Manager", status: "In Progress" },
+  { alert: "RFP trigger review pending for 6 sourcing events", owner: "Procurement Manager", status: "Pending" },
+];
+
 function ControlTower() {
-  const { state } = useDemo();
-  const k = state.kpis;
   return (
-    <AppLayout title="Control Tower" subtitle="Portfolio-level command center for source-to-contract intelligence.">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Kpi icon={<DollarSign className="h-4 w-4" />} label="Active contract value" value={k.totalActiveValue} />
-        <Kpi icon={<DollarSign className="h-4 w-4" />} label="Value under control" value={`${k.valueUnderControl} modeled`} />
-        <Kpi icon={<Clock className="h-4 w-4" />} label="Source-to-contract cycle opportunity" value={`${k.s2cCycleCurrent}d → ${k.s2cCycleTarget}d target`} />
-        <Kpi icon={<Activity className="h-4 w-4" />} label="Active sourcing decisions" value={k.activeSourcingDecisions} />
-        <Kpi icon={<AlertCircle className="h-4 w-4" />} label="RFP trigger reviews" value={k.rfpTriggerReviews} tone="warning" />
-        <Kpi icon={<FileWarning className="h-4 w-4" />} label="Contract packages generated" value={k.contractPackagesGenerated} />
-        <Kpi icon={<TrendingDown className="h-4 w-4" />} label="Invoice exceptions flagged" value={k.invoiceExceptionsFlagged} tone="risk" />
-        <Kpi icon={<Wrench className="h-4 w-4" />} label="Reconciliation exposure" value={k.reconciliationExposure} tone="warning" />
-        <Kpi icon={<AlertCircle className="h-4 w-4" />} label="Renewal risk contracts" value={k.renewalRiskContracts} tone="warning" />
-        <Kpi icon={<AlertCircle className="h-4 w-4" />} label="Overdue Klydo actions" value={k.overdueKlydo} tone="warning" />
+    <AppLayout
+      title="Control Tower"
+      subtitle="Portfolio visibility across source-to-contract decisions, execution exceptions, value protection, and renewal risk."
+    >
+      <div className="mb-4">
+        <span className="inline-block text-[11px] font-medium rounded-full border border-accent2/40 bg-accent2/10 text-accent2 px-2 py-0.5">
+          Modeled demo metrics
+        </span>
       </div>
 
-
-      <div className="rounded-xl border bg-card p-4 mb-5">
-        <h3 className="text-sm font-semibold mb-1">Portfolio Value Protection</h3>
-        <p className="text-[11px] text-muted-foreground mb-3">Portfolio metrics are modeled for demo purposes.</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <VpRow label="Source-to-procure avoided exposure" value={k.valueProtection.sourceToProcureAvoided} />
-          <VpRow label="Procure-to-pay exceptions" value={k.valueProtection.procureToPayExceptions} />
-          <VpRow label="SLA / service credit opportunity" value={k.valueProtection.slaServiceCreditOpportunity} />
-          <VpRow label="Total modeled value under control" value={k.valueProtection.totalUnderControl} tone="brand" />
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+        {KPIS.map((k) => (
+          <div key={k.label} className="rounded-xl border bg-card p-4">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{k.label}</div>
+            <div className="text-lg font-semibold mt-1">{k.value}</div>
+          </div>
+        ))}
       </div>
 
-      <div className="rounded-xl border bg-card p-4 mb-5">
-        <h3 className="text-sm font-semibold mb-1">Portfolio Workload</h3>
-        <p className="text-[11px] text-muted-foreground mb-3">Portfolio metrics are modeled for demo purposes.</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <VpRow label="Contracts under review this quarter" value="100+" />
-          <VpRow label="RFXs / sourcing events under review this quarter" value="250" />
-          <VpRow label="Renewal windows under 120 days" value="6" />
-          <VpRow label="High-risk service packages" value="4" />
-        </div>
-      </div>
+      <Section title="Portfolio Value Protection">
+        <SimpleTable
+          headers={["Value Area", "Amount", "Status"]}
+          rows={VALUE_PROTECTION.map((r) => [r.area, r.amount, r.status])}
+        />
+      </Section>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <Kpi icon={<DollarSign className="h-4 w-4" />} label="Active contract value" value={k.totalActiveValue} />
-        <Kpi icon={<TrendingDown className="h-4 w-4" />} label="Avoided exposure (leakage)" value={`$${(k.leakageExposure/1000).toFixed(0)}K`} tone="risk" />
-        <Kpi icon={<AlertCircle className="h-4 w-4" />} label="Open exceptions" value={k.openExceptions} tone="warning" />
-        <Kpi icon={<Clock className="h-4 w-4" />} label="Renewals <120 days" value={k.renewals120} />
-      </div>
+      <Section title="Portfolio Workload">
+        <SimpleTable
+          headers={["Metric", "Count", "Notes"]}
+          rows={WORKLOAD.map((r) => [r.metric, r.count, r.notes])}
+        />
+      </Section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-        <BarCard title="Leakage by category" data={[
-          { label: "Industrial Maintenance", v: 95 },
-          { label: "Electrical", v: 72 },
-          { label: "HVAC / Facilities", v: 54 },
-          { label: "Inspection", v: 38 },
-          { label: "Other", v: 26 },
-        ]} />
-        <BarCard title="Exceptions by status" data={[
-          { label: "Open", v: 70 },
-          { label: "In Review", v: 45 },
-          { label: "Overdue", v: 30 },
-          { label: "Resolved", v: 22 },
-        ]} />
-        <BarCard title="Vendor risk ranking" data={[
-          { label: "VoltLine Services", v: 88 },
-          { label: "Elevate Field Services", v: 71 },
-          { label: "Northstar", v: 58 },
-          { label: "EcoHandling", v: 49 },
-          { label: "Apex", v: 22 },
-        ]} />
-      </div>
+      <Section title="Top Portfolio Alerts">
+        <SimpleTable
+          headers={["Alert", "Owner", "Status"]}
+          rows={ALERTS.map((r) => [r.alert, r.owner, r.status])}
+        />
+      </Section>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="px-4 py-3 border-b text-sm font-semibold">Portfolio contracts</div>
-        <table className="w-full text-sm">
-          <thead className="bg-muted/60 text-xs text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-2.5 font-medium">Contract</th>
-              <th className="text-left px-4 py-2.5 font-medium">Vendor</th>
-              <th className="text-left px-4 py-2.5 font-medium">Category</th>
-              <th className="text-left px-4 py-2.5 font-medium">Value</th>
-              <th className="text-left px-4 py-2.5 font-medium">Status</th>
-              <th className="text-left px-4 py-2.5 font-medium">Risk</th>
-            </tr>
-          </thead>
-          <tbody>
-            {portfolioContracts.map((c) => (
-              <tr key={c.id} className={`border-t ${c.id === "apex-sow" && state.invoiceUploaded ? "bg-risk/5" : ""}`}>
-                <td className="px-4 py-3">
-                  <div className="font-medium">{c.name}</div>
-                  {c.id === "apex-sow" && state.invoiceUploaded && (
-                    <div className="text-[11px] text-risk mt-0.5">Includes $12,480 leakage exception from INV-1842</div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-xs">{c.vendor}</td>
-                <td className="px-4 py-3 text-xs">{c.category}</td>
-                <td className="px-4 py-3 text-xs">{c.value}</td>
-                <td className="px-4 py-3 text-xs">{c.status}</td>
-                <td className="px-4 py-3 text-xs">
-                  <span className={`rounded-full px-2 py-0.5 font-medium ${
-                    c.risk === "High" ? "bg-risk/15 text-risk" : c.risk === "Medium" ? "bg-warning/15 text-warning" : "bg-success/15 text-success"
-                  }`}>{c.risk}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <p className="text-[11px] text-muted-foreground mt-6">
+        Portfolio metrics are modeled for demo purposes. Production values would calculate from approved contract terms,
+        sourcing events, invoices, supplier performance records, and governed benchmark sources.
+      </p>
     </AppLayout>
   );
 }
 
-function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string | number; tone?: "warning" | "risk" }) {
-  const cls = tone === "risk" ? "text-risk" : tone === "warning" ? "text-warning" : "text-foreground";
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground text-xs">{icon} {label}</div>
-      <div className={`text-2xl font-semibold mt-1 ${cls}`}>{value}</div>
+    <div className="rounded-xl border bg-card overflow-hidden mb-5">
+      <div className="px-4 py-3 border-b text-sm font-semibold">{title}</div>
+      {children}
     </div>
   );
 }
 
-function VpRow({ label, value, tone }: { label: string; value: string; tone?: "brand" }) {
+function SimpleTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
-    <div className={`rounded-lg border p-3 ${tone === "brand" ? "border-accent2/40 bg-accent2/5" : ""}`}>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold mt-0.5 ${tone === "brand" ? "text-accent2" : ""}`}>{value}</div>
-    </div>
-  );
-}
-
-
-
-function BarCard({ title, data }: { title: string; data: { label: string; v: number }[] }) {
-  const max = Math.max(...data.map((d) => d.v));
-  return (
-    <div className="rounded-xl border bg-card p-4">
-      <h3 className="text-sm font-semibold mb-3">{title}</h3>
-      <div className="space-y-2">
-        {data.map((d) => (
-          <div key={d.label} className="text-xs">
-            <div className="flex justify-between mb-0.5"><span>{d.label}</span><span className="text-muted-foreground">{d.v}</span></div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-accent2 rounded-full" style={{ width: `${(d.v / max) * 100}%` }} />
-            </div>
-          </div>
+    <table className="w-full text-sm">
+      <thead className="bg-muted/60 text-xs text-muted-foreground">
+        <tr>
+          {headers.map((h) => (
+            <th key={h} className="text-left px-4 py-2.5 font-medium">{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, i) => (
+          <tr key={i} className="border-t">
+            {row.map((cell, j) => (
+              <td key={j} className="px-4 py-3 text-xs">{cell}</td>
+            ))}
+          </tr>
         ))}
-      </div>
-    </div>
+      </tbody>
+    </table>
   );
 }
