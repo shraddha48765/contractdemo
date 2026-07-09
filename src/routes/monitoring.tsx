@@ -32,17 +32,19 @@ function Monitoring() {
 
   if (!state.contractActivated) {
     return (
-      <AppLayout title="Execution Monitoring" subtitle="Activate the Apex contract to enable monitoring.">
+      <AppLayout title="Execution Monitoring" subtitle="Post-Signature Enforcement of Sourced Terms">
         <div className="rounded-xl border bg-card p-8 text-center max-w-lg mx-auto">
           <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
           <h3 className="text-sm font-semibold">No active contracts under monitoring yet</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Complete the Signature & Activation step on the Industrial Maintenance Services SOW to enable post-signature monitoring.
+          <p className="text-xs text-muted-foreground mt-1 mb-4">
+            Complete Signature & Activation on the Industrial Maintenance Services SOW to enable monitoring, or load the seeded demo contract below.
           </p>
+          <Button onClick={activateContract} className="gap-1.5">Load Activated Demo Contract</Button>
         </div>
       </AppLayout>
     );
   }
+
 
   return (
     <AppLayout title="Execution Monitoring" subtitle="Post-Signature Enforcement of Sourced Terms.">
