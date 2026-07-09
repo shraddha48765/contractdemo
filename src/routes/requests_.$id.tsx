@@ -740,10 +740,13 @@ function RedlineReview() {
   };
 
   const risks = [
-    { title: "Service credit language softened", risk: "High", impact: "May reduce 1.5% credit enforceability", fallback: "Approved Service Credit Clause / Fallback Clause B", sources: ["apex-redline-v3", "service-credit-clause", "fallback-clause-b"] },
-    { title: "Escalation language modified", risk: "Medium", impact: "Could allow escalation above 3% cap", fallback: "Reinstate 3% annual labor-rate escalation cap", sources: ["apex-redline-v3", "escalation-cap-clause"] },
-    { title: "Change-order flexibility expanded", risk: "Medium", impact: "Could increase leakage above $25K threshold", fallback: "Require approval for change orders above $25K", sources: ["apex-redline-v3"] },
+    { title: "Escalation changed from 3% to 5%", risk: "High", impact: "Commercial exposure — labor rate escalation above approved cap", fallback: "Restore 3% annual escalation cap", sources: ["escalation-cap-clause", "apex-redline-v3"] },
+    { title: "SLA language softened from 4-hour emergency response to commercially reasonable response", risk: "High", impact: "Operational response risk on emergency events", fallback: "Restore 4-hour emergency response SLA", sources: ["emergency-coverage", "apex-redline-v3"] },
+    { title: "Service credit deleted", risk: "High", impact: "Performance enforcement risk — credit not payable on SLA miss", fallback: "Restore 1.5% service credit if SLA target is missed for two consecutive months", sources: ["service-credit-clause", "apex-redline-v3"] },
+    { title: "Scope exception added for weekend emergency coverage", risk: "Medium", impact: "Change-order exposure on weekend events", fallback: "Clarify weekend emergency coverage in Exhibit D", sources: ["prior-change-order", "exhibit-d"] },
   ];
+
+  const showFindings = state.redlineUploaded;
 
   return (
     <div className="space-y-4">
@@ -756,7 +759,7 @@ function RedlineReview() {
           <div className="flex items-center gap-2">
             <input ref={fileRef} type="file" hidden onChange={(e) => handleFile(e.target.files?.[0])} />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { uploadRedline("Apex_Redline_v3.pdf"); }}>
-              Use sample
+              Use Sample Redline
             </Button>
             <Button size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
               <Upload className="h-4 w-4" /> Upload Redline
@@ -772,30 +775,54 @@ function RedlineReview() {
         {msg && <div className="mt-3 rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-xs text-warning">{msg}</div>}
       </div>
 
-      {state.redlineUploaded && (
-        <div className="rounded-xl border bg-card p-5">
-          <h3 className="text-sm font-semibold mb-3">Detected risks</h3>
-          <div className="space-y-2">
-            {risks.map((r) => (
-              <div key={r.title} className="rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className={`h-4 w-4 ${r.risk === "High" ? "text-risk" : "text-warning"}`} />
-                  <span className="text-sm font-medium">{r.title}</span>
-                  <span className={`text-[10px] rounded px-1.5 py-0.5 ${r.risk === "High" ? "bg-risk/15 text-risk" : "bg-warning/15 text-warning"}`}>{r.risk}</span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">{r.impact}</div>
-                <div className="text-xs mt-1"><span className="text-muted-foreground">Recommended fallback: </span>{r.fallback}</div>
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {r.sources.map((s) => <SourceChip key={s} id={s} />)}
-                </div>
-              </div>
-            ))}
+      {!showFindings && (
+        <div className="rounded-xl border bg-card p-5 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-sm font-semibold">Sample Apex Redline v3 Analysis</h3>
+            <p className="text-xs text-muted-foreground">Load seeded redline findings to walk through the fallback review flow without uploading a file.</p>
           </div>
+          <Button onClick={() => uploadRedline("Apex_Redline_v3.pdf")} className="gap-1.5">Use Sample Redline</Button>
+        </div>
+      )}
+
+      {showFindings && (
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <div className="px-4 py-3 border-b text-sm font-semibold">Sample Apex Redline v3 Analysis</div>
+          <table className="w-full text-xs">
+            <thead className="bg-muted/60 text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2 font-medium">Vendor Change</th>
+                <th className="text-left px-3 py-2 font-medium">Risk</th>
+                <th className="text-left px-3 py-2 font-medium">Recommended Fallback</th>
+                <th className="text-left px-3 py-2 font-medium">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {risks.map((r) => (
+                <tr key={r.title} className="border-t align-top">
+                  <td className="px-3 py-2">
+                    <div className="font-medium">{r.title}</div>
+                    <div className="text-muted-foreground mt-0.5">{r.impact}</div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] ${r.risk === "High" ? "bg-risk/15 text-risk" : "bg-warning/15 text-warning"}`}>{r.risk}</span>
+                  </td>
+                  <td className="px-3 py-2">{r.fallback}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {r.sources.map((s) => <SourceChip key={s} id={s} />)}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
 }
+
 
 function ApprovalsHistory() {
   const { state, setApproval } = useDemo();
