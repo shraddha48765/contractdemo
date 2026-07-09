@@ -15,15 +15,18 @@ function ControlTower() {
   return (
     <AppLayout title="Control Tower" subtitle="Portfolio-level command center for source-to-contract intelligence.">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Kpi icon={<Clock className="h-4 w-4" />} label="S2C cycle opportunity" value={`${k.s2cCycleCurrent}d → ${k.s2cCycleTarget}d target`} />
-        <Kpi icon={<DollarSign className="h-4 w-4" />} label="Value under control" value={k.valueUnderControl} />
+        <Kpi icon={<DollarSign className="h-4 w-4" />} label="Active contract value" value={k.totalActiveValue} />
+        <Kpi icon={<DollarSign className="h-4 w-4" />} label="Value under control" value={`${k.valueUnderControl} modeled`} />
+        <Kpi icon={<Clock className="h-4 w-4" />} label="Source-to-contract cycle opportunity" value={`${k.s2cCycleCurrent}d → ${k.s2cCycleTarget}d target`} />
         <Kpi icon={<Activity className="h-4 w-4" />} label="Active sourcing decisions" value={k.activeSourcingDecisions} />
         <Kpi icon={<AlertCircle className="h-4 w-4" />} label="RFP trigger reviews" value={k.rfpTriggerReviews} tone="warning" />
         <Kpi icon={<FileWarning className="h-4 w-4" />} label="Contract packages generated" value={k.contractPackagesGenerated} />
         <Kpi icon={<TrendingDown className="h-4 w-4" />} label="Invoice exceptions flagged" value={k.invoiceExceptionsFlagged} tone="risk" />
         <Kpi icon={<Wrench className="h-4 w-4" />} label="Reconciliation exposure" value={k.reconciliationExposure} tone="warning" />
         <Kpi icon={<AlertCircle className="h-4 w-4" />} label="Renewal risk contracts" value={k.renewalRiskContracts} tone="warning" />
+        <Kpi icon={<AlertCircle className="h-4 w-4" />} label="Overdue Klydo actions" value={k.overdueKlydo} tone="warning" />
       </div>
+
 
       <div className="rounded-xl border bg-card p-4 mb-5">
         <h3 className="text-sm font-semibold mb-1">Portfolio Value Protection</h3>
@@ -33,6 +36,17 @@ function ControlTower() {
           <VpRow label="Procure-to-pay exceptions" value={k.valueProtection.procureToPayExceptions} />
           <VpRow label="SLA / service credit opportunity" value={k.valueProtection.slaServiceCreditOpportunity} />
           <VpRow label="Total modeled value under control" value={k.valueProtection.totalUnderControl} tone="brand" />
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4 mb-5">
+        <h3 className="text-sm font-semibold mb-1">Portfolio Workload</h3>
+        <p className="text-[11px] text-muted-foreground mb-3">Portfolio metrics are modeled for demo purposes.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <VpRow label="Contracts under review this quarter" value="100+" />
+          <VpRow label="RFXs / sourcing events under review this quarter" value="250" />
+          <VpRow label="Renewal windows under 120 days" value="6" />
+          <VpRow label="High-risk service packages" value="4" />
         </div>
       </div>
 

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/monitoring")({
 });
 
 function Monitoring() {
-  const { state, uploadInvoice } = useDemo();
+  const { state, uploadInvoice, activateContract } = useDemo();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -32,17 +32,19 @@ function Monitoring() {
 
   if (!state.contractActivated) {
     return (
-      <AppLayout title="Execution Monitoring" subtitle="Activate the Apex contract to enable monitoring.">
+      <AppLayout title="Execution Monitoring" subtitle="Post-Signature Enforcement of Sourced Terms">
         <div className="rounded-xl border bg-card p-8 text-center max-w-lg mx-auto">
           <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
           <h3 className="text-sm font-semibold">No active contracts under monitoring yet</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Complete the Signature & Activation step on the Industrial Maintenance Services SOW to enable post-signature monitoring.
+          <p className="text-xs text-muted-foreground mt-1 mb-4">
+            Complete Signature & Activation on the Industrial Maintenance Services SOW to enable monitoring, or load the seeded demo contract below.
           </p>
+          <Button onClick={activateContract} className="gap-1.5">Load Activated Demo Contract</Button>
         </div>
       </AppLayout>
     );
   }
+
 
   return (
     <AppLayout title="Execution Monitoring" subtitle="Post-Signature Enforcement of Sourced Terms.">
@@ -119,22 +121,41 @@ function Monitoring() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <Card title="Contract-to-Invoice Validation">
-          <ul className="text-xs space-y-1.5">
-            <li className="rounded border p-2">Labor rate above approved rate card <span className="text-muted-foreground">· Exhibit C / C-1</span></li>
-            <li className="rounded border p-2">Materials markup exceeds allowed threshold <span className="text-muted-foreground">· Exhibit C-1</span></li>
-            <li className="rounded border p-2">Missing approved timesheet <span className="text-muted-foreground">· Exhibit C</span></li>
-            <li className="rounded border p-2">Invoice references wrong PO line <span className="text-muted-foreground">· Exhibit C</span></li>
-            <li className="rounded border p-2">Unauthorized charge <span className="text-muted-foreground">· Exhibit C</span></li>
-          </ul>
+          <table className="w-full text-[11px]">
+            <thead className="text-muted-foreground">
+              <tr>
+                <th className="text-left py-1 font-medium">Rule</th>
+                <th className="text-left py-1 font-medium">Source</th>
+                <th className="text-left py-1 font-medium">Status</th>
+                <th className="text-left py-1 font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Labor rate above approved rate card","Exhibit C / C-1 / Apex Rate Card v2","Open","$18.6K modeled","risk"],
+                ["Materials markup exceeds allowed threshold","Exhibit C-1","In Review","$12K modeled","warning"],
+                ["Missing approved timesheet","Exhibit C","Open","—","warning"],
+                ["Invoice references wrong PO line","Exhibit C","Open","—","warning"],
+                ["Unauthorized charge","Exhibit C","Review Required","—","risk"],
+              ].map((r) => (
+                <tr key={r[0]} className="border-t">
+                  <td className="py-1.5 pr-2">{r[0]}</td>
+                  <td className="py-1.5 pr-2 text-muted-foreground">{r[1]}</td>
+                  <td className={`py-1.5 pr-2 ${r[4] === "risk" ? "text-risk" : "text-warning"}`}>{r[2]}</td>
+                  <td className="py-1.5">{r[3]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Card>
         <Card title="WRBS / Tax Cap / Reconciliation">
           <ul className="text-xs space-y-1.5">
-            <li className="rounded border p-2 flex justify-between"><span>Tax-cap threshold reached</span><span className="text-warning">Route Finance review</span></li>
-            <li className="rounded border p-2 flex justify-between"><span>WRBS variance detected</span><span className="text-warning">Request support</span></li>
-            <li className="rounded border p-2 flex justify-between"><span>Rebate/discount not passed through</span><span className="text-warning">Commercial benefit review</span></li>
-            <li className="rounded border p-2 flex justify-between"><span>Overcharge evidence available</span><span className="text-warning">Recovery workflow</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Tax-cap threshold reached</span><span className="text-warning">Open · Route Finance review</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>WRBS variance detected</span><span className="text-warning">In Review · Request support</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Rebate/discount not passed through</span><span className="text-warning">Open · Commercial benefit review</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Overcharge evidence available</span><span className="text-warning">Pending validation · Recovery workflow</span></li>
           </ul>
         </Card>
         <Card title="SLA / Service Credit">
@@ -142,10 +163,19 @@ function Monitoring() {
             <li className="rounded border p-2 flex justify-between"><span>4-hour emergency response</span><span className="text-risk">Breach detected</span></li>
             <li className="rounded border p-2 flex justify-between"><span>95% monthly completion</span><span className="text-warning">Missed two consecutive months</span></li>
             <li className="rounded border p-2 flex justify-between"><span>1.5% service credit</span><span className="text-warning">Review triggered</span></li>
-            <li className="rounded border p-2 flex justify-between"><span>CAP</span><span className="text-warning">Route Vendor Manager</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Corrective Action Plan</span><span className="text-warning">Route Vendor Manager</span></li>
+          </ul>
+        </Card>
+        <Card title="Active Klydo Exceptions">
+          <ul className="text-xs space-y-1.5">
+            <li className="rounded border p-2 flex justify-between"><span>Finance review: invoice-rate variance</span><span className="text-muted-foreground">Finance Reviewer</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Vendor Manager: corrective action plan</span><span className="text-muted-foreground">Vendor Manager</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Contract Owner: service credit review</span><span className="text-muted-foreground">Contract Owner</span></li>
+            <li className="rounded border p-2 flex justify-between"><span>Approve downstream payment-control flag</span><span className="text-muted-foreground">Procurement Buyer</span></li>
           </ul>
         </Card>
       </div>
+
     </AppLayout>
   );
 }

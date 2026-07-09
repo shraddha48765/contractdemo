@@ -37,7 +37,7 @@ function RequestWorkspace() {
     : "Supplier Review In Progress";
 
   return (
-    <AppLayout title="Industrial Maintenance Services Renewal – 2026" subtitle="REQ-IMS-2026-014 · 3-year renewal · $2.4M · Apex Industrial Services">
+    <AppLayout title="Industrial Maintenance Services Renewal – 2026" subtitle="REQ-IMS-2026-014 · 3-year renewal · $2.4M · Incumbent: Apex Industrial Services">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2 text-xs">
           <Link to="/requests" className="text-muted-foreground hover:text-foreground">Active Requests</Link>
@@ -67,11 +67,13 @@ function RequestWorkspace() {
       <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
         {[
           ["Category", "Industrial Maintenance Services"],
-          ["Procurement Model", "Service + Materials Pass-through"],
-          ["Sourcing Path", "Incumbent Renewal + Market Check"],
-          ["RFP Trigger", "Not Required Currently"],
-          ["Primary Vendor", "Apex Industrial Services"],
-          ["Value Under Control", "$194.6K Modeled"],
+          ["Procurement Model", "Service procurement with materials pass-through"],
+          ["Sourcing Path", "Incumbent renewal with competitive market check"],
+          ["RFI/RFP/Tender", "Not required currently — watch triggers"],
+          ["Incumbent", "Apex Industrial Services"],
+          ["Recommendation", "Apex pending buyer confirmation"],
+          ["Value Under Control", "$194.6K modeled"],
+
         ].map(([k, v]) => (
           <span key={k} className="rounded-full border px-2 py-0.5 bg-card">
             <span className="text-muted-foreground">{k}:</span> <span className="font-medium">{v}</span>
@@ -151,18 +153,30 @@ function RequestSummary() {
 
       <div className="rounded-xl border bg-card p-5 space-y-2">
         <h3 className="text-sm font-semibold">Value Protection Summary</h3>
-        <ul className="text-xs space-y-1">
-          <li className="flex justify-between rounded border p-2"><span>Escalation exposure avoided</span><span className="font-medium">$48K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Scope-gap exposure prevented</span><span className="font-medium">$74K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Invoice-rate variance flagged</span><span className="font-medium">$18.6K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Materials markup exposure reviewed</span><span className="font-medium">$12K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Service credit opportunity</span><span className="font-medium">$42K</span></li>
-          <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K</span></li>
+        <p className="text-[11px] text-muted-foreground -mt-1">Each metric is source-backed. Expand to view calculation basis.</p>
+        <ul className="text-xs space-y-1.5">
+          <ValueProtectionRow label="Escalation exposure avoided" value="$48K"
+            sources={["apex-rate-card-v2","market-benchmark","escalation-cap-clause"]}
+            calc="Modeled avoided exposure based on 5% proposed escalation vs 3% recommended cap over the labor-rate portion of the 3-year package." />
+          <ValueProtectionRow label="Scope-gap exposure prevented" value="$74K"
+            sources={["prior-change-order","northstar-prior-sow","exhibit-d"]}
+            calc="Modeled avoided exposure from prior scope gap that previously required a change order. The new Exhibit D draft inserts weekend emergency coverage upfront." />
+          <ValueProtectionRow label="Invoice-rate variance flagged" value="$18.6K"
+            sources={["invoice-1842","apex-rate-card-v2","exhibit-c"]}
+            calc="Modeled exception based on invoice labor/rate lines compared against the approved rate card and invoice support requirements." />
+          <ValueProtectionRow label="Materials markup exposure reviewed" value="$12K"
+            sources={["exhibit-c","exhibit-c1"]}
+            calc="Modeled review based on materials pass-through, markup rules, and required supporting invoice evidence." />
+          <ValueProtectionRow label="Service credit opportunity" value="$42K"
+            sources={["sla-logs","service-credit-clause","exhibit-d"]}
+            calc="Modeled service credit opportunity triggered when SLA target is missed for two consecutive months." />
+          <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K modeled</span></li>
         </ul>
         <p className="text-[11px] text-muted-foreground pt-1">
-          Demo seed values. Production values would calculate from approved contract terms, historical spend, supplier data, invoices, and performance records.
+          Demo seed values. In production, calculations would use approved contract terms, historical spend, supplier data, invoices, performance records, and CITGO-approved benchmark sources.
         </p>
       </div>
+
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -215,6 +229,30 @@ function Field({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function ValueProtectionRow({ label, value, sources, calc }: { label: string; value: string; sources: string[]; calc: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="rounded border p-2">
+      <div className="flex items-center justify-between gap-2">
+        <span>{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{value}</span>
+          <button onClick={() => setOpen((o) => !o)} className="text-[10px] text-accent2 hover:underline">
+            {open ? "Hide" : "View calculation"}
+          </button>
+        </div>
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {sources.map((s) => <SourceChip key={s} id={s} />)}
+      </div>
+      {open && (
+        <div className="mt-1.5 rounded bg-muted/40 p-2 text-[11px] text-muted-foreground">{calc}</div>
+      )}
+    </li>
+  );
+}
+
 
 function SupplierLine({ name, tag, highlight }: { name: string; tag: string; highlight?: boolean }) {
   return (
@@ -274,109 +312,50 @@ function KlydoWorkflow() {
 
 function SupplierReview() {
   const { state, confirmSupplier } = useDemo();
+  const [override, setOverride] = useState<null | "rfp" | "override" | "confirmed">(state.supplierConfirmed ? "confirmed" : null);
   const cmp = vendors.slice(0, 3);
   return (
     <div className="space-y-4">
+      {/* 1. Sourcing Path Recommendation */}
       <div className="rounded-xl border bg-card p-5 space-y-2">
-        <h3 className="text-sm font-semibold">Supplier Review & Sourcing Strategy</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sourcing Path Recommendation</div>
-            <div><span className="text-muted-foreground">Recommended path:</span> Incumbent renewal with competitive market check</div>
-            <div><span className="text-muted-foreground">Full RFP required?</span> Not currently required</div>
-            <div><span className="text-muted-foreground">Why:</span> Apex is incumbent, lower transition risk; pricing and scope protections required</div>
-            <div><span className="text-muted-foreground">Trigger RFP if:</span> escalation exceeds cap, SLA weakens, pricing variance exceeds threshold, or risk score increases</div>
-            <div className="text-warning">Klydo action: Procurement Manager approval required</div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Supplier Shortlist</div>
-            <ul className="space-y-1">
-              <li className="flex justify-between"><span>Apex Industrial Services</span><span className="text-success">Incumbent · Recommended with conditions</span></li>
-              <li className="flex justify-between"><span>Northstar Maintenance Group</span><span className="text-muted-foreground">Historical alternate · Benchmark reference</span></li>
-              <li className="flex justify-between"><span>Elevate Field Services</span><span className="text-muted-foreground">New vendor · Market comparison</span></li>
-            </ul>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 1</span>
+          <h3 className="text-sm font-semibold">Sourcing Path Recommendation</h3>
         </div>
+        <div className="text-xs grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div><span className="text-muted-foreground">Recommended path:</span> Incumbent renewal with competitive market check</div>
+          <div><span className="text-muted-foreground">RFI/RFP/Tender:</span> Not required currently</div>
+          <div className="md:col-span-2"><span className="text-muted-foreground">Why:</span> Apex is incumbent, lower transition risk; pricing and scope protections required.</div>
+          <div className="md:col-span-2"><span className="text-muted-foreground">Trigger RFP if:</span> escalation exceeds cap, SLA weakens, pricing variance exceeds threshold, or risk score increases.</div>
+        </div>
+        <div className="text-[11px] text-warning">Klydo action: Procurement Manager approval required for buyer validation.</div>
       </div>
 
+      {/* 2. Supplier Shortlist */}
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 2</span>
+          <h3 className="text-sm font-semibold">Supplier Shortlist</h3>
+        </div>
+        <ul className="text-xs space-y-1">
+          <li className="flex justify-between rounded border p-2"><span>Apex Industrial Services</span><span className="text-success">Incumbent · Recommended with conditions</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Northstar Maintenance Group</span><span className="text-muted-foreground">Historical alternate · Benchmark reference</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Elevate Field Services</span><span className="text-muted-foreground">New vendor · Market comparison</span></li>
+        </ul>
+      </div>
+
+      {/* 3. Bid / SOW Response Comparison */}
       <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="px-4 py-3 border-b text-sm font-semibold">Bid / SOW Response Comparison</div>
+        <div className="px-4 py-3 border-b flex items-center gap-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 3</span>
+          <span className="text-sm font-semibold">Bid / SOW Response Comparison</span>
+        </div>
         <table className="w-full text-xs">
           <thead className="bg-muted/60 text-muted-foreground">
             <tr>
               <th className="text-left px-3 py-2 font-medium">Dimension</th>
-              <th className="text-left px-3 py-2 font-medium">Apex</th>
-              <th className="text-left px-3 py-2 font-medium">Northstar</th>
-              <th className="text-left px-3 py-2 font-medium">Elevate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ["Labor escalation", "5% proposed → 3% recommended", "3%", "3%"],
-              ["Emergency SLA", "4 hours", "6 hours", "4 hours"],
-              ["Completion target", "95%", "93%", "95%"],
-              ["Scope exceptions", "Weekend coverage clarification needed", "Prior gaps", "Clean but untested"],
-              ["HSSE readiness", "Strong", "Moderate", "Needs onboarding"],
-              ["Transition risk", "Low", "Medium", "High"],
-              ["Commercial fit", "Medium", "Medium", "Medium-high"],
-            ].map((r) => (
-              <tr key={r[0]} className="border-t">
-                {r.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "text-muted-foreground" : ""}`}>{c}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-2">Recommended Award Direction</h3>
-        <p className="text-xs mb-2 font-medium text-accent2">Conditional award to Apex Industrial Services</p>
-        <p className="text-[11px] text-muted-foreground mb-2">Required conditions:</p>
-        <ul className="text-xs space-y-1 list-disc list-inside">
-          <li>Apply 3% annual escalation cap</li>
-          <li>Restore 4-hour emergency response SLA</li>
-          <li>Maintain 95% monthly service completion target</li>
-          <li>Add 1.5% service credit if SLA target is missed for two consecutive months</li>
-          <li>Insert prior change-order scope item into Exhibit D</li>
-          <li>Require approval for change orders above $25K</li>
-          <li>Validate materials pass-through and markup rules</li>
-        </ul>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-2">Source-to-Procure Value Protection</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Escalation exposure avoided</div><div className="font-semibold mt-0.5">$48K</div></div>
-          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Scope-gap exposure prevented</div><div className="font-semibold mt-0.5">$74K</div></div>
-          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Award risk avoided (HSSE/site readiness)</div><div className="font-semibold mt-0.5">Qualitative</div></div>
-        </div>
-      </div>
-
-      {!state.supplierConfirmed ? (
-        <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-accent2" />
-            <div>
-              <div className="text-sm font-semibold">System Recommendation: Apex Industrial Services</div>
-              <div className="text-xs text-muted-foreground">Risk-adjusted fit: pricing in range, strong SLA history, low transition risk.</div>
-            </div>
-          </div>
-          <Button onClick={confirmSupplier} className="gap-1.5"><CheckCircle2 className="h-4 w-4" /> Confirm Recommended Supplier</Button>
-        </div>
-      ) : (
-        <div className="rounded-xl border bg-success/10 border-success/30 p-4 flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-success" />
-          <div className="text-sm font-semibold">Selected Supplier: Apex Industrial Services</div>
-        </div>
-      )}
-
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-muted/60 text-muted-foreground">
-            <tr>
-              <th className="text-left px-3 py-2.5 font-medium">Metric</th>
               {cmp.map((v) => (
-                <th key={v.id} className="text-left px-3 py-2.5 font-medium">
+                <th key={v.id} className="text-left px-3 py-2 font-medium">
                   <div>{v.name}</div>
                   <div className="text-[10px] font-normal mt-0.5">
                     {state.supplierConfirmed && v.id === "apex" ? (
@@ -391,35 +370,110 @@ function SupplierReview() {
           </thead>
           <tbody>
             {[
-              ["3-yr est. cost", "cost"],
-              ["Labor escalation", "escalation"],
-              ["Avg emergency response", "emergencyResponse"],
-              ["Monthly completion", "completionRate"],
-              ["Change-order exposure", "changeOrderExposure"],
-              ["Compliance readiness", "compliance"],
-              ["Transition risk", "transitionRisk"],
-              ["Recommendation", "recommendation"],
-            ].map(([label, key], idx) => (
-              <tr key={label} className="border-t">
-                <td className="px-3 py-2.5 text-muted-foreground">{label}</td>
-                {cmp.map((v) => (
-                  <td key={v.id} className="px-3 py-2.5">
-                    <div>{(v as any)[key]}</div>
-                    {idx === 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {v.sources.map((s) => <SourceChip key={s} id={s} />)}
-                      </div>
-                    )}
-                  </td>
-                ))}
+              ["Labor escalation", "5% proposed → 3% recommended", "3%", "3%"],
+              ["Emergency SLA", "4 hours", "6 hours", "4 hours"],
+              ["Completion target", "95%", "93%", "95%"],
+              ["3-yr est. cost", cmp[0].cost, cmp[1].cost, cmp[2].cost],
+              ["Change-order exposure", cmp[0].changeOrderExposure, cmp[1].changeOrderExposure, cmp[2].changeOrderExposure],
+              ["Compliance readiness", cmp[0].compliance, cmp[1].compliance, cmp[2].compliance],
+              ["Transition risk", cmp[0].transitionRisk, cmp[1].transitionRisk, cmp[2].transitionRisk],
+              ["Scope exceptions", "Weekend coverage clarification needed", "Prior gaps", "Clean but untested"],
+              ["HSSE readiness", "Strong", "Moderate", "Needs onboarding"],
+              ["Recommendation", cmp[0].recommendation, cmp[1].recommendation, cmp[2].recommendation],
+            ].map((r) => (
+              <tr key={r[0] as string} className="border-t">
+                {r.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "text-muted-foreground" : ""}`}>{c}</td>)}
               </tr>
             ))}
+            <tr className="border-t bg-muted/20">
+              <td className="px-3 py-2 text-muted-foreground">Sources</td>
+              {cmp.map((v) => (
+                <td key={v.id} className="px-3 py-2">
+                  <div className="flex flex-wrap gap-1">
+                    {v.sources.map((s) => <SourceChip key={s} id={s} />)}
+                  </div>
+                </td>
+              ))}
+            </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* 4. Source-to-Procure Value Protection */}
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 4</span>
+          <h3 className="text-sm font-semibold">Source-to-Procure Value Protection</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Escalation exposure avoided</div><div className="font-semibold mt-0.5">$48K modeled</div><div className="mt-1"><SourceChip id="escalation-cap-clause" /></div></div>
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Scope-gap exposure prevented</div><div className="font-semibold mt-0.5">$74K modeled</div><div className="mt-1"><SourceChip id="prior-change-order" /></div></div>
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Award risk avoided (HSSE/site readiness)</div><div className="font-semibold mt-0.5">Qualitative</div><div className="mt-1"><SourceChip id="exhibit-e" /></div></div>
+        </div>
+      </div>
+
+      {/* 5. Recommended Award Direction */}
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 5</span>
+          <h3 className="text-sm font-semibold">Recommended Award Direction</h3>
+        </div>
+        <p className="text-xs mb-2 font-medium text-accent2">Conditional award to Apex Industrial Services (pending buyer confirmation)</p>
+        <p className="text-[11px] text-muted-foreground mb-2">Required conditions:</p>
+        <ul className="text-xs space-y-1 list-disc list-inside">
+          <li>Apply 3% annual escalation cap</li>
+          <li>Restore 4-hour emergency response SLA</li>
+          <li>Maintain 95% monthly service completion target</li>
+          <li>Add 1.5% service credit if SLA target is missed for two consecutive months</li>
+          <li>Insert prior change-order scope item into Exhibit D</li>
+          <li>Require approval for change orders above $25K</li>
+          <li>Validate materials pass-through and markup rules</li>
+        </ul>
+        <div className="mt-2 flex flex-wrap gap-1">
+          <SourceChip id="apex-rate-card-v2" />
+          <SourceChip id="sla-logs" />
+          <SourceChip id="escalation-cap-clause" />
+          <SourceChip id="service-credit-clause" />
+          <SourceChip id="prior-change-order" />
+        </div>
+      </div>
+
+      {/* 6. Confirm / Override */}
+      <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 6</span>
+          <h3 className="text-sm font-semibold">Confirm / Override Decision</h3>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">Buyer validation required. Human decision governs the sourcing outcome.</p>
+        {state.supplierConfirmed ? (
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="h-5 w-5 text-success" />
+            <span className="font-semibold">Selected Supplier: Apex Industrial Services</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={confirmSupplier} className="gap-1.5"><CheckCircle2 className="h-4 w-4" /> Confirm Recommended Supplier</Button>
+              <Button variant="outline" onClick={() => setOverride("rfp")}>Request RFI/RFP/Tender Path</Button>
+              <Button variant="outline" onClick={() => setOverride("override")}>Override Recommendation</Button>
+            </div>
+            {override === "rfp" && (
+              <div className="mt-3 rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
+                RFI/RFP/Tender path requested. Klydo will route to Procurement Manager for approval and open a competitive event.
+              </div>
+            )}
+            {override === "override" && (
+              <div className="mt-3 rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
+                Override recorded. Klydo will require justification and re-route award direction for Procurement Manager approval.
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
+
 
 function EvidencePackTab() {
   const { state } = useDemo();
@@ -686,10 +740,13 @@ function RedlineReview() {
   };
 
   const risks = [
-    { title: "Service credit language softened", risk: "High", impact: "May reduce 1.5% credit enforceability", fallback: "Approved Service Credit Clause / Fallback Clause B", sources: ["apex-redline-v3", "service-credit-clause", "fallback-clause-b"] },
-    { title: "Escalation language modified", risk: "Medium", impact: "Could allow escalation above 3% cap", fallback: "Reinstate 3% annual labor-rate escalation cap", sources: ["apex-redline-v3", "escalation-cap-clause"] },
-    { title: "Change-order flexibility expanded", risk: "Medium", impact: "Could increase leakage above $25K threshold", fallback: "Require approval for change orders above $25K", sources: ["apex-redline-v3"] },
+    { title: "Escalation changed from 3% to 5%", risk: "High", impact: "Commercial exposure — labor rate escalation above approved cap", fallback: "Restore 3% annual escalation cap", sources: ["escalation-cap-clause", "apex-redline-v3"] },
+    { title: "SLA language softened from 4-hour emergency response to commercially reasonable response", risk: "High", impact: "Operational response risk on emergency events", fallback: "Restore 4-hour emergency response SLA", sources: ["emergency-coverage", "apex-redline-v3"] },
+    { title: "Service credit deleted", risk: "High", impact: "Performance enforcement risk — credit not payable on SLA miss", fallback: "Restore 1.5% service credit if SLA target is missed for two consecutive months", sources: ["service-credit-clause", "apex-redline-v3"] },
+    { title: "Scope exception added for weekend emergency coverage", risk: "Medium", impact: "Change-order exposure on weekend events", fallback: "Clarify weekend emergency coverage in Exhibit D", sources: ["prior-change-order", "exhibit-d"] },
   ];
+
+  const showFindings = state.redlineUploaded;
 
   return (
     <div className="space-y-4">
@@ -702,7 +759,7 @@ function RedlineReview() {
           <div className="flex items-center gap-2">
             <input ref={fileRef} type="file" hidden onChange={(e) => handleFile(e.target.files?.[0])} />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { uploadRedline("Apex_Redline_v3.pdf"); }}>
-              Use sample
+              Use Sample Redline
             </Button>
             <Button size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
               <Upload className="h-4 w-4" /> Upload Redline
@@ -718,30 +775,54 @@ function RedlineReview() {
         {msg && <div className="mt-3 rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-xs text-warning">{msg}</div>}
       </div>
 
-      {state.redlineUploaded && (
-        <div className="rounded-xl border bg-card p-5">
-          <h3 className="text-sm font-semibold mb-3">Detected risks</h3>
-          <div className="space-y-2">
-            {risks.map((r) => (
-              <div key={r.title} className="rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className={`h-4 w-4 ${r.risk === "High" ? "text-risk" : "text-warning"}`} />
-                  <span className="text-sm font-medium">{r.title}</span>
-                  <span className={`text-[10px] rounded px-1.5 py-0.5 ${r.risk === "High" ? "bg-risk/15 text-risk" : "bg-warning/15 text-warning"}`}>{r.risk}</span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">{r.impact}</div>
-                <div className="text-xs mt-1"><span className="text-muted-foreground">Recommended fallback: </span>{r.fallback}</div>
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {r.sources.map((s) => <SourceChip key={s} id={s} />)}
-                </div>
-              </div>
-            ))}
+      {!showFindings && (
+        <div className="rounded-xl border bg-card p-5 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-sm font-semibold">Sample Apex Redline v3 Analysis</h3>
+            <p className="text-xs text-muted-foreground">Load seeded redline findings to walk through the fallback review flow without uploading a file.</p>
           </div>
+          <Button onClick={() => uploadRedline("Apex_Redline_v3.pdf")} className="gap-1.5">Use Sample Redline</Button>
+        </div>
+      )}
+
+      {showFindings && (
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <div className="px-4 py-3 border-b text-sm font-semibold">Sample Apex Redline v3 Analysis</div>
+          <table className="w-full text-xs">
+            <thead className="bg-muted/60 text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2 font-medium">Vendor Change</th>
+                <th className="text-left px-3 py-2 font-medium">Risk</th>
+                <th className="text-left px-3 py-2 font-medium">Recommended Fallback</th>
+                <th className="text-left px-3 py-2 font-medium">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {risks.map((r) => (
+                <tr key={r.title} className="border-t align-top">
+                  <td className="px-3 py-2">
+                    <div className="font-medium">{r.title}</div>
+                    <div className="text-muted-foreground mt-0.5">{r.impact}</div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] ${r.risk === "High" ? "bg-risk/15 text-risk" : "bg-warning/15 text-warning"}`}>{r.risk}</span>
+                  </td>
+                  <td className="px-3 py-2">{r.fallback}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {r.sources.map((s) => <SourceChip key={s} id={s} />)}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
 }
+
 
 function ApprovalsHistory() {
   const { state, setApproval } = useDemo();
