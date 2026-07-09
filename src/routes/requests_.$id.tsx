@@ -37,7 +37,7 @@ function RequestWorkspace() {
     : "Supplier Review In Progress";
 
   return (
-    <AppLayout title="Industrial Maintenance Services Renewal – 2026" subtitle="REQ-IMS-2026-014 · 3-year renewal · $2.4M · Apex Industrial Services">
+    <AppLayout title="Industrial Maintenance Services Renewal – 2026" subtitle="REQ-IMS-2026-014 · 3-year renewal · $2.4M · Incumbent: Apex Industrial Services">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2 text-xs">
           <Link to="/requests" className="text-muted-foreground hover:text-foreground">Active Requests</Link>
