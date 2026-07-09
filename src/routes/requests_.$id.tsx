@@ -67,11 +67,13 @@ function RequestWorkspace() {
       <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
         {[
           ["Category", "Industrial Maintenance Services"],
-          ["Procurement Model", "Service + Materials Pass-through"],
-          ["Sourcing Path", "Incumbent Renewal + Market Check"],
-          ["RFP Trigger", "Not Required Currently"],
-          ["Primary Vendor", "Apex Industrial Services"],
-          ["Value Under Control", "$194.6K Modeled"],
+          ["Procurement Model", "Service procurement with materials pass-through"],
+          ["Sourcing Path", "Incumbent renewal with competitive market check"],
+          ["RFI/RFP/Tender", "Not required currently — watch triggers"],
+          ["Incumbent", "Apex Industrial Services"],
+          ["Recommendation", "Apex pending buyer confirmation"],
+          ["Value Under Control", "$194.6K modeled"],
+
         ].map(([k, v]) => (
           <span key={k} className="rounded-full border px-2 py-0.5 bg-card">
             <span className="text-muted-foreground">{k}:</span> <span className="font-medium">{v}</span>
