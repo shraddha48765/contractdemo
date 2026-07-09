@@ -153,18 +153,30 @@ function RequestSummary() {
 
       <div className="rounded-xl border bg-card p-5 space-y-2">
         <h3 className="text-sm font-semibold">Value Protection Summary</h3>
-        <ul className="text-xs space-y-1">
-          <li className="flex justify-between rounded border p-2"><span>Escalation exposure avoided</span><span className="font-medium">$48K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Scope-gap exposure prevented</span><span className="font-medium">$74K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Invoice-rate variance flagged</span><span className="font-medium">$18.6K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Materials markup exposure reviewed</span><span className="font-medium">$12K</span></li>
-          <li className="flex justify-between rounded border p-2"><span>Service credit opportunity</span><span className="font-medium">$42K</span></li>
-          <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K</span></li>
+        <p className="text-[11px] text-muted-foreground -mt-1">Each metric is source-backed. Expand to view calculation basis.</p>
+        <ul className="text-xs space-y-1.5">
+          <ValueProtectionRow label="Escalation exposure avoided" value="$48K"
+            sources={["apex-rate-card-v2","market-benchmark","escalation-cap-clause"]}
+            calc="Modeled avoided exposure based on 5% proposed escalation vs 3% recommended cap over the labor-rate portion of the 3-year package." />
+          <ValueProtectionRow label="Scope-gap exposure prevented" value="$74K"
+            sources={["prior-change-order","northstar-prior-sow","exhibit-d"]}
+            calc="Modeled avoided exposure from prior scope gap that previously required a change order. The new Exhibit D draft inserts weekend emergency coverage upfront." />
+          <ValueProtectionRow label="Invoice-rate variance flagged" value="$18.6K"
+            sources={["invoice-1842","apex-rate-card-v2","exhibit-c"]}
+            calc="Modeled exception based on invoice labor/rate lines compared against the approved rate card and invoice support requirements." />
+          <ValueProtectionRow label="Materials markup exposure reviewed" value="$12K"
+            sources={["exhibit-c","exhibit-c1"]}
+            calc="Modeled review based on materials pass-through, markup rules, and required supporting invoice evidence." />
+          <ValueProtectionRow label="Service credit opportunity" value="$42K"
+            sources={["sla-logs","service-credit-clause","exhibit-d"]}
+            calc="Modeled service credit opportunity triggered when SLA target is missed for two consecutive months." />
+          <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K modeled</span></li>
         </ul>
         <p className="text-[11px] text-muted-foreground pt-1">
-          Demo seed values. Production values would calculate from approved contract terms, historical spend, supplier data, invoices, and performance records.
+          Demo seed values. In production, calculations would use approved contract terms, historical spend, supplier data, invoices, performance records, and CITGO-approved benchmark sources.
         </p>
       </div>
+
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
