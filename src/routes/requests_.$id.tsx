@@ -312,109 +312,50 @@ function KlydoWorkflow() {
 
 function SupplierReview() {
   const { state, confirmSupplier } = useDemo();
+  const [override, setOverride] = useState<null | "rfp" | "override" | "confirmed">(state.supplierConfirmed ? "confirmed" : null);
   const cmp = vendors.slice(0, 3);
   return (
     <div className="space-y-4">
+      {/* 1. Sourcing Path Recommendation */}
       <div className="rounded-xl border bg-card p-5 space-y-2">
-        <h3 className="text-sm font-semibold">Supplier Review & Sourcing Strategy</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sourcing Path Recommendation</div>
-            <div><span className="text-muted-foreground">Recommended path:</span> Incumbent renewal with competitive market check</div>
-            <div><span className="text-muted-foreground">Full RFP required?</span> Not currently required</div>
-            <div><span className="text-muted-foreground">Why:</span> Apex is incumbent, lower transition risk; pricing and scope protections required</div>
-            <div><span className="text-muted-foreground">Trigger RFP if:</span> escalation exceeds cap, SLA weakens, pricing variance exceeds threshold, or risk score increases</div>
-            <div className="text-warning">Klydo action: Procurement Manager approval required</div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Supplier Shortlist</div>
-            <ul className="space-y-1">
-              <li className="flex justify-between"><span>Apex Industrial Services</span><span className="text-success">Incumbent · Recommended with conditions</span></li>
-              <li className="flex justify-between"><span>Northstar Maintenance Group</span><span className="text-muted-foreground">Historical alternate · Benchmark reference</span></li>
-              <li className="flex justify-between"><span>Elevate Field Services</span><span className="text-muted-foreground">New vendor · Market comparison</span></li>
-            </ul>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 1</span>
+          <h3 className="text-sm font-semibold">Sourcing Path Recommendation</h3>
         </div>
+        <div className="text-xs grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div><span className="text-muted-foreground">Recommended path:</span> Incumbent renewal with competitive market check</div>
+          <div><span className="text-muted-foreground">RFI/RFP/Tender:</span> Not required currently</div>
+          <div className="md:col-span-2"><span className="text-muted-foreground">Why:</span> Apex is incumbent, lower transition risk; pricing and scope protections required.</div>
+          <div className="md:col-span-2"><span className="text-muted-foreground">Trigger RFP if:</span> escalation exceeds cap, SLA weakens, pricing variance exceeds threshold, or risk score increases.</div>
+        </div>
+        <div className="text-[11px] text-warning">Klydo action: Procurement Manager approval required for buyer validation.</div>
       </div>
 
+      {/* 2. Supplier Shortlist */}
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 2</span>
+          <h3 className="text-sm font-semibold">Supplier Shortlist</h3>
+        </div>
+        <ul className="text-xs space-y-1">
+          <li className="flex justify-between rounded border p-2"><span>Apex Industrial Services</span><span className="text-success">Incumbent · Recommended with conditions</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Northstar Maintenance Group</span><span className="text-muted-foreground">Historical alternate · Benchmark reference</span></li>
+          <li className="flex justify-between rounded border p-2"><span>Elevate Field Services</span><span className="text-muted-foreground">New vendor · Market comparison</span></li>
+        </ul>
+      </div>
+
+      {/* 3. Bid / SOW Response Comparison */}
       <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="px-4 py-3 border-b text-sm font-semibold">Bid / SOW Response Comparison</div>
+        <div className="px-4 py-3 border-b flex items-center gap-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 3</span>
+          <span className="text-sm font-semibold">Bid / SOW Response Comparison</span>
+        </div>
         <table className="w-full text-xs">
           <thead className="bg-muted/60 text-muted-foreground">
             <tr>
               <th className="text-left px-3 py-2 font-medium">Dimension</th>
-              <th className="text-left px-3 py-2 font-medium">Apex</th>
-              <th className="text-left px-3 py-2 font-medium">Northstar</th>
-              <th className="text-left px-3 py-2 font-medium">Elevate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ["Labor escalation", "5% proposed → 3% recommended", "3%", "3%"],
-              ["Emergency SLA", "4 hours", "6 hours", "4 hours"],
-              ["Completion target", "95%", "93%", "95%"],
-              ["Scope exceptions", "Weekend coverage clarification needed", "Prior gaps", "Clean but untested"],
-              ["HSSE readiness", "Strong", "Moderate", "Needs onboarding"],
-              ["Transition risk", "Low", "Medium", "High"],
-              ["Commercial fit", "Medium", "Medium", "Medium-high"],
-            ].map((r) => (
-              <tr key={r[0]} className="border-t">
-                {r.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "text-muted-foreground" : ""}`}>{c}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-2">Recommended Award Direction</h3>
-        <p className="text-xs mb-2 font-medium text-accent2">Conditional award to Apex Industrial Services</p>
-        <p className="text-[11px] text-muted-foreground mb-2">Required conditions:</p>
-        <ul className="text-xs space-y-1 list-disc list-inside">
-          <li>Apply 3% annual escalation cap</li>
-          <li>Restore 4-hour emergency response SLA</li>
-          <li>Maintain 95% monthly service completion target</li>
-          <li>Add 1.5% service credit if SLA target is missed for two consecutive months</li>
-          <li>Insert prior change-order scope item into Exhibit D</li>
-          <li>Require approval for change orders above $25K</li>
-          <li>Validate materials pass-through and markup rules</li>
-        </ul>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-2">Source-to-Procure Value Protection</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Escalation exposure avoided</div><div className="font-semibold mt-0.5">$48K</div></div>
-          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Scope-gap exposure prevented</div><div className="font-semibold mt-0.5">$74K</div></div>
-          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Award risk avoided (HSSE/site readiness)</div><div className="font-semibold mt-0.5">Qualitative</div></div>
-        </div>
-      </div>
-
-      {!state.supplierConfirmed ? (
-        <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-accent2" />
-            <div>
-              <div className="text-sm font-semibold">System Recommendation: Apex Industrial Services</div>
-              <div className="text-xs text-muted-foreground">Risk-adjusted fit: pricing in range, strong SLA history, low transition risk.</div>
-            </div>
-          </div>
-          <Button onClick={confirmSupplier} className="gap-1.5"><CheckCircle2 className="h-4 w-4" /> Confirm Recommended Supplier</Button>
-        </div>
-      ) : (
-        <div className="rounded-xl border bg-success/10 border-success/30 p-4 flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-success" />
-          <div className="text-sm font-semibold">Selected Supplier: Apex Industrial Services</div>
-        </div>
-      )}
-
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-muted/60 text-muted-foreground">
-            <tr>
-              <th className="text-left px-3 py-2.5 font-medium">Metric</th>
               {cmp.map((v) => (
-                <th key={v.id} className="text-left px-3 py-2.5 font-medium">
+                <th key={v.id} className="text-left px-3 py-2 font-medium">
                   <div>{v.name}</div>
                   <div className="text-[10px] font-normal mt-0.5">
                     {state.supplierConfirmed && v.id === "apex" ? (
@@ -429,35 +370,110 @@ function SupplierReview() {
           </thead>
           <tbody>
             {[
-              ["3-yr est. cost", "cost"],
-              ["Labor escalation", "escalation"],
-              ["Avg emergency response", "emergencyResponse"],
-              ["Monthly completion", "completionRate"],
-              ["Change-order exposure", "changeOrderExposure"],
-              ["Compliance readiness", "compliance"],
-              ["Transition risk", "transitionRisk"],
-              ["Recommendation", "recommendation"],
-            ].map(([label, key], idx) => (
-              <tr key={label} className="border-t">
-                <td className="px-3 py-2.5 text-muted-foreground">{label}</td>
-                {cmp.map((v) => (
-                  <td key={v.id} className="px-3 py-2.5">
-                    <div>{(v as any)[key]}</div>
-                    {idx === 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {v.sources.map((s) => <SourceChip key={s} id={s} />)}
-                      </div>
-                    )}
-                  </td>
-                ))}
+              ["Labor escalation", "5% proposed → 3% recommended", "3%", "3%"],
+              ["Emergency SLA", "4 hours", "6 hours", "4 hours"],
+              ["Completion target", "95%", "93%", "95%"],
+              ["3-yr est. cost", cmp[0].cost, cmp[1].cost, cmp[2].cost],
+              ["Change-order exposure", cmp[0].changeOrderExposure, cmp[1].changeOrderExposure, cmp[2].changeOrderExposure],
+              ["Compliance readiness", cmp[0].compliance, cmp[1].compliance, cmp[2].compliance],
+              ["Transition risk", cmp[0].transitionRisk, cmp[1].transitionRisk, cmp[2].transitionRisk],
+              ["Scope exceptions", "Weekend coverage clarification needed", "Prior gaps", "Clean but untested"],
+              ["HSSE readiness", "Strong", "Moderate", "Needs onboarding"],
+              ["Recommendation", cmp[0].recommendation, cmp[1].recommendation, cmp[2].recommendation],
+            ].map((r) => (
+              <tr key={r[0] as string} className="border-t">
+                {r.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "text-muted-foreground" : ""}`}>{c}</td>)}
               </tr>
             ))}
+            <tr className="border-t bg-muted/20">
+              <td className="px-3 py-2 text-muted-foreground">Sources</td>
+              {cmp.map((v) => (
+                <td key={v.id} className="px-3 py-2">
+                  <div className="flex flex-wrap gap-1">
+                    {v.sources.map((s) => <SourceChip key={s} id={s} />)}
+                  </div>
+                </td>
+              ))}
+            </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* 4. Source-to-Procure Value Protection */}
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 4</span>
+          <h3 className="text-sm font-semibold">Source-to-Procure Value Protection</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Escalation exposure avoided</div><div className="font-semibold mt-0.5">$48K modeled</div><div className="mt-1"><SourceChip id="escalation-cap-clause" /></div></div>
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Scope-gap exposure prevented</div><div className="font-semibold mt-0.5">$74K modeled</div><div className="mt-1"><SourceChip id="prior-change-order" /></div></div>
+          <div className="rounded-lg border p-3"><div className="text-muted-foreground">Award risk avoided (HSSE/site readiness)</div><div className="font-semibold mt-0.5">Qualitative</div><div className="mt-1"><SourceChip id="exhibit-e" /></div></div>
+        </div>
+      </div>
+
+      {/* 5. Recommended Award Direction */}
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 5</span>
+          <h3 className="text-sm font-semibold">Recommended Award Direction</h3>
+        </div>
+        <p className="text-xs mb-2 font-medium text-accent2">Conditional award to Apex Industrial Services (pending buyer confirmation)</p>
+        <p className="text-[11px] text-muted-foreground mb-2">Required conditions:</p>
+        <ul className="text-xs space-y-1 list-disc list-inside">
+          <li>Apply 3% annual escalation cap</li>
+          <li>Restore 4-hour emergency response SLA</li>
+          <li>Maintain 95% monthly service completion target</li>
+          <li>Add 1.5% service credit if SLA target is missed for two consecutive months</li>
+          <li>Insert prior change-order scope item into Exhibit D</li>
+          <li>Require approval for change orders above $25K</li>
+          <li>Validate materials pass-through and markup rules</li>
+        </ul>
+        <div className="mt-2 flex flex-wrap gap-1">
+          <SourceChip id="apex-rate-card-v2" />
+          <SourceChip id="sla-logs" />
+          <SourceChip id="escalation-cap-clause" />
+          <SourceChip id="service-credit-clause" />
+          <SourceChip id="prior-change-order" />
+        </div>
+      </div>
+
+      {/* 6. Confirm / Override */}
+      <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5 font-semibold">STEP 6</span>
+          <h3 className="text-sm font-semibold">Confirm / Override Decision</h3>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">Buyer validation required. Human decision governs the sourcing outcome.</p>
+        {state.supplierConfirmed ? (
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="h-5 w-5 text-success" />
+            <span className="font-semibold">Selected Supplier: Apex Industrial Services</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={confirmSupplier} className="gap-1.5"><CheckCircle2 className="h-4 w-4" /> Confirm Recommended Supplier</Button>
+              <Button variant="outline" onClick={() => setOverride("rfp")}>Request RFI/RFP/Tender Path</Button>
+              <Button variant="outline" onClick={() => setOverride("override")}>Override Recommendation</Button>
+            </div>
+            {override === "rfp" && (
+              <div className="mt-3 rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
+                RFI/RFP/Tender path requested. Klydo will route to Procurement Manager for approval and open a competitive event.
+              </div>
+            )}
+            {override === "override" && (
+              <div className="mt-3 rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
+                Override recorded. Klydo will require justification and re-route award direction for Procurement Manager approval.
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
+
 
 function EvidencePackTab() {
   const { state } = useDemo();
