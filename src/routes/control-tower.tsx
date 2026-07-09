@@ -39,6 +39,17 @@ function ControlTower() {
         </div>
       </div>
 
+      <div className="rounded-xl border bg-card p-4 mb-5">
+        <h3 className="text-sm font-semibold mb-1">Portfolio Workload</h3>
+        <p className="text-[11px] text-muted-foreground mb-3">Portfolio metrics are modeled for demo purposes.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <VpRow label="Contracts under review this quarter" value="100+" />
+          <VpRow label="RFXs / sourcing events under review this quarter" value="250" />
+          <VpRow label="Renewal windows under 120 days" value="6" />
+          <VpRow label="High-risk service packages" value="4" />
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <Kpi icon={<DollarSign className="h-4 w-4" />} label="Active contract value" value={k.totalActiveValue} />
         <Kpi icon={<TrendingDown className="h-4 w-4" />} label="Avoided exposure (leakage)" value={`$${(k.leakageExposure/1000).toFixed(0)}K`} tone="risk" />
