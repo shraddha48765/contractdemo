@@ -279,31 +279,58 @@ function KlydoWorkflow() {
     "Signature & activation",
     "Execution monitoring",
   ];
+  const [blueprint, setBlueprint] = useState<"pending" | "confirmed" | "modify">("pending");
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-3">Workflow timeline</h3>
-        <ol className="space-y-2 text-sm">
-          {steps.map((s, i) => {
-            const stageIdx = state.contractActivated ? 11 : state.redlineUploaded ? 6 : state.supplierConfirmed ? 4 : 1;
-            const done = i < stageIdx;
-            const current = i === stageIdx;
-            return (
-              <li key={s} className="flex items-center gap-3">
-                <div className={`h-6 w-6 rounded-full grid place-items-center text-[10px] font-medium ${done ? "bg-success text-success-foreground" : current ? "bg-accent2 text-white" : "bg-muted text-muted-foreground"}`}>
-                  {done ? "✓" : i + 1}
-                </div>
-                <span className={done ? "text-muted-foreground line-through" : current ? "font-medium" : ""}>{s}</span>
-                {current && <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5">in progress</span>}
-              </li>
-            );
-          })}
-        </ol>
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-accent2 font-semibold">Blueprint</div>
+            <div className="text-sm font-semibold mt-0.5">Source-to-Contract Intelligence Lifecycle · Industrial Maintenance Services</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Intake → Category strategy → Sourcing path → RFP trigger → Shortlist → Comparison → Award → Contract package → Approvals → Signature → Monitoring
+            </p>
+          </div>
+          {blueprint === "pending" && (
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setBlueprint("confirmed")} className="text-xs font-medium px-3 py-1.5 rounded-md bg-accent2 text-white hover:opacity-90">Confirm Blueprint</button>
+              <button onClick={() => setBlueprint("modify")} className="text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted">Modify Blueprint</button>
+            </div>
+          )}
+          {blueprint === "confirmed" && (
+            <span className="text-[11px] rounded-full bg-success/15 text-success border border-success/30 px-2.5 py-1 font-medium">Blueprint Confirmed</span>
+          )}
+          {blueprint === "modify" && (
+            <span className="text-[11px] rounded-full bg-warning/15 text-warning border border-warning/30 px-2.5 py-1 font-medium">Modification requested · routed to Procurement Manager</span>
+          )}
+        </div>
       </div>
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-3">Klydo work items</h3>
-        <div className="space-y-2">
-          {requestTasks.map((t) => <KlydoTaskCard key={t.id} task={t} compact />)}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-3">Workflow timeline</h3>
+          <ol className="space-y-2 text-sm">
+            {steps.map((s, i) => {
+              const stageIdx = state.contractActivated ? 11 : state.redlineUploaded ? 6 : state.supplierConfirmed ? 4 : 1;
+              const done = i < stageIdx;
+              const current = i === stageIdx;
+              return (
+                <li key={s} className="flex items-center gap-3">
+                  <div className={`h-6 w-6 rounded-full grid place-items-center text-[10px] font-medium ${done ? "bg-success text-success-foreground" : current ? "bg-accent2 text-white" : "bg-muted text-muted-foreground"}`}>
+                    {done ? "✓" : i + 1}
+                  </div>
+                  <span className={done ? "text-muted-foreground line-through" : current ? "font-medium" : ""}>{s}</span>
+                  {current && <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5">in progress</span>}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-3">Klydo work items</h3>
+          <div className="space-y-2">
+            {requestTasks.map((t) => <KlydoTaskCard key={t.id} task={t} compact />)}
+          </div>
         </div>
       </div>
     </div>
