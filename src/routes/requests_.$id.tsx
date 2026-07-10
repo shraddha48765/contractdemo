@@ -63,22 +63,28 @@ function RequestWorkspace() {
         </div>
       </div>
 
-      {/* Status chips */}
-      <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
-        {[
-          ["Category", "Industrial Maintenance Services"],
-          ["Procurement Model", "Service procurement with materials pass-through"],
-          ["Sourcing Path", "Incumbent renewal with competitive market check"],
-          ["RFI/RFP/Tender", "Not required currently — watch triggers"],
-          ["Incumbent", "Apex Industrial Services"],
-          ["Recommendation", "Apex pending buyer confirmation"],
-          ["Value Under Control", "$194.6K modeled"],
-
-        ].map(([k, v]) => (
-          <span key={k} className="rounded-full border px-2 py-0.5 bg-card">
-            <span className="text-muted-foreground">{k}:</span> <span className="font-medium">{v}</span>
-          </span>
-        ))}
+      {/* Executive summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Category</div>
+          <div className="text-sm font-semibold mt-1">Industrial Maintenance Services</div>
+          <div className="text-xs text-muted-foreground mt-0.5">3-year SOW · Multi-site · Critical operations</div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sourcing Path</div>
+          <div className="text-sm font-semibold mt-1">Targeted competitive review</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Incumbent benchmarked against alternates</div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Recommended Vendor</div>
+          <div className="text-sm font-semibold mt-1">Apex Industrial Services</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Pending buyer confirmation</div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Value Under Control</div>
+          <div className="text-sm font-semibold mt-1">7% modeled value protection</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Leakage · Reconciliation · SLA · Invoice controls</div>
+        </div>
       </div>
 
       {/* Klydo progress strip */}
