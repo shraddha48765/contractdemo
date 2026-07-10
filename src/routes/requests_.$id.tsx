@@ -63,22 +63,28 @@ function RequestWorkspace() {
         </div>
       </div>
 
-      {/* Status chips */}
-      <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
-        {[
-          ["Category", "Industrial Maintenance Services"],
-          ["Procurement Model", "Service procurement with materials pass-through"],
-          ["Sourcing Path", "Incumbent renewal with competitive market check"],
-          ["RFI/RFP/Tender", "Not required currently — watch triggers"],
-          ["Incumbent", "Apex Industrial Services"],
-          ["Recommendation", "Apex pending buyer confirmation"],
-          ["Value Under Control", "$194.6K modeled"],
-
-        ].map(([k, v]) => (
-          <span key={k} className="rounded-full border px-2 py-0.5 bg-card">
-            <span className="text-muted-foreground">{k}:</span> <span className="font-medium">{v}</span>
-          </span>
-        ))}
+      {/* Executive summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Category</div>
+          <div className="text-sm font-semibold mt-1">Industrial Maintenance Services</div>
+          <div className="text-xs text-muted-foreground mt-0.5">3-year SOW · Multi-site · Critical operations</div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sourcing Path</div>
+          <div className="text-sm font-semibold mt-1">Targeted competitive review</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Incumbent benchmarked against alternates</div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Recommended Vendor</div>
+          <div className="text-sm font-semibold mt-1">Apex Industrial Services</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Pending buyer confirmation</div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Value Under Control</div>
+          <div className="text-sm font-semibold mt-1">7% modeled value protection</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Leakage · Reconciliation · SLA · Invoice controls</div>
+        </div>
       </div>
 
       {/* Klydo progress strip */}
@@ -132,6 +138,45 @@ function RequestSummary() {
   const { state } = useDemo();
   return (
     <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2 rounded-xl border bg-card p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Business need</h3>
+          <p className="text-sm text-muted-foreground">
+            Multi-site industrial maintenance support with emergency response, preventive maintenance,
+            materials pass-through, technician certification, and SLA / service credit controls.
+          </p>
+        </div>
+        <dl className="grid grid-cols-2 gap-y-3 text-sm">
+          <Field label="Contract value" value="$2.4M estimated over 3 years" />
+          <Field label="Sites / scope" value="6 plants, regional" />
+          <Field label="Emergency SLA" value="4-hour response" />
+          <Field label="Completion target" value="95% monthly" />
+          <Field label="Service credit" value="1.5% if SLA missed two consecutive months" />
+          <Field label="Change order rule" value="Approval required above $25K" />
+          <Field label="Compliance" value="Insurance · safety · technician cert." />
+          <Field label="Renewal review" value="120-day window" />
+        </dl>
+        <div className="pt-2 border-t">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Source</div>
+          <SourceChip id="request-intake" />
+        </div>
+      </div>
+      <div className="rounded-xl border bg-card p-5 space-y-3">
+        <h3 className="text-sm font-semibold">Supplier context</h3>
+        <div className="space-y-2 text-xs">
+          <SupplierLine name="Apex Industrial Services" tag={state.supplierConfirmed ? "Selected Supplier" : "Incumbent / known"} highlight={state.supplierConfirmed} />
+          <SupplierLine name="Northstar Maintenance Group" tag="Historical alternate" />
+          <SupplierLine name="Elevate Field Services" tag="New vendor option" />
+        </div>
+        {!state.supplierConfirmed && (
+          <div className="rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
+            Apex appears as incumbent. Selection requires Procurement Buyer confirmation.
+          </div>
+        )}
+      </div>
+    </div>
+
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="rounded-xl border bg-card p-5 space-y-3">
         <div className="flex items-center gap-2">
@@ -177,45 +222,6 @@ function RequestSummary() {
         </p>
       </div>
 
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 rounded-xl border bg-card p-5 space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold mb-1">Business need</h3>
-          <p className="text-sm text-muted-foreground">
-            Multi-site industrial maintenance support with emergency response, preventive maintenance,
-            materials pass-through, technician certification, and SLA / service credit controls.
-          </p>
-        </div>
-        <dl className="grid grid-cols-2 gap-y-3 text-sm">
-          <Field label="Contract value" value="$2.4M estimated over 3 years" />
-          <Field label="Sites / scope" value="6 plants, regional" />
-          <Field label="Emergency SLA" value="4-hour response" />
-          <Field label="Completion target" value="95% monthly" />
-          <Field label="Service credit" value="1.5% if SLA missed two consecutive months" />
-          <Field label="Change order rule" value="Approval required above $25K" />
-          <Field label="Compliance" value="Insurance · safety · technician cert." />
-          <Field label="Renewal review" value="120-day window" />
-        </dl>
-        <div className="pt-2 border-t">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Source</div>
-          <SourceChip id="request-intake" />
-        </div>
-      </div>
-      <div className="rounded-xl border bg-card p-5 space-y-3">
-        <h3 className="text-sm font-semibold">Supplier context</h3>
-        <div className="space-y-2 text-xs">
-          <SupplierLine name="Apex Industrial Services" tag={state.supplierConfirmed ? "Selected Supplier" : "Incumbent / known"} highlight={state.supplierConfirmed} />
-          <SupplierLine name="Northstar Maintenance Group" tag="Historical alternate" />
-          <SupplierLine name="Elevate Field Services" tag="New vendor option" />
-        </div>
-        {!state.supplierConfirmed && (
-          <div className="rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
-            Apex appears as incumbent. Selection requires Procurement Buyer confirmation.
-          </div>
-        )}
-      </div>
     </div>
     </div>
   );
