@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 
 export const Route = createFileRoute("/control-tower")({
-  head: () => ({ meta: [{ title: "Control Tower — Contract Intelligence" }] }),
+  head: () => ({ meta: [{ title: "Value Protection Command Center — Contract Intelligence" }] }),
   component: ControlTower,
 });
 
