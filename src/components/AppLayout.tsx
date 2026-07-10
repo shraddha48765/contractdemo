@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useDemo } from "@/lib/store";
 import { AIAssistant } from "./AIAssistant";
 import { Button } from "@/components/ui/button";
+import citgoLogo from "@/assets/citgo-logo.jpg.asset.json";
 
 const nav = [
   { to: "/", label: "Home / My Work", icon: Home },
@@ -11,7 +12,7 @@ const nav = [
   { to: "/contracts", label: "Contract & Document Intelligence", icon: Library },
   { to: "/vendors", label: "Supplier / Vendor Intelligence", icon: Building2 },
   { to: "/monitoring", label: "Execution Monitoring", icon: Activity },
-  { to: "/control-tower", label: "Control Tower", icon: Gauge },
+  { to: "/control-tower", label: "Value Protection Command Center", icon: Gauge },
   { to: "/governance", label: "Knowledge & Governance", icon: ShieldCheck },
 ];
 
