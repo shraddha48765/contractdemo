@@ -20,6 +20,7 @@ export function AppLayout({ children, title, subtitle }: { children: ReactNode; 
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { state, resetDemo } = useDemo();
   const [aiOpen, setAiOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const openTasks = state.klydoTasks.filter((t) => t.status === "Open" || t.status === "In Review").length;
 
