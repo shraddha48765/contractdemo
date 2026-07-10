@@ -82,6 +82,26 @@ export function AIAssistant({ open, onClose, screenPath }: { open: boolean; onCl
   }, [screenPath]);
 
   const [thread, setThread] = useState<{ q: string; a: string; sources: string[] }[]>([]);
+  const [input, setInput] = useState("");
+
+  function submitInput() {
+    const q = input.trim();
+    if (!q) return;
+    const lower = q.toLowerCase();
+    const match = prompts.find((p) => {
+      const words = lower.split(/\s+/).filter((w) => w.length > 3);
+      return words.some((w) => p.q.toLowerCase().includes(w));
+    });
+    const response = match
+      ? { q, a: match.a, sources: match.sources }
+      : {
+          q,
+          a: "No governed answer available for this prompt in the demo. Try one of the suggested prompts, which are backed by seeded source artifacts (contracts, exhibits, SLA logs, invoices, benchmarks).",
+          sources: [],
+        };
+    setThread((t) => [...t, response]);
+    setInput("");
+  }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
