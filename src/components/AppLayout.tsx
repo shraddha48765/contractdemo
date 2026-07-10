@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useDemo } from "@/lib/store";
 import { AIAssistant } from "./AIAssistant";
 import { Button } from "@/components/ui/button";
-import citgoLogo from "@/assets/citgo-logo.jpg.asset.json";
+
 
 const nav = [
   { to: "/", label: "Home / My Work", icon: Home },
