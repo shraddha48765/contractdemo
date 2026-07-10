@@ -6,7 +6,7 @@ import { vendors, evidencePack, contractIntelligenceRecs, sourceArtifacts, vendo
 import { KlydoTaskCard } from "@/components/KlydoTaskCard";
 import { SourceChip } from "@/components/SourceChip";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles } from "lucide-react";
+import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles, Users, Download } from "lucide-react";
 
 export const Route = createFileRoute("/requests_/$id")({
   head: () => ({ meta: [{ title: "Industrial Maintenance Services SOW — Active Request" }] }),
