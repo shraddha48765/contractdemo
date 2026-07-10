@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useDemo } from "@/lib/store";
 import { AIAssistant } from "./AIAssistant";
 import { Button } from "@/components/ui/button";
+import citgoLogo from "@/assets/citgo-logo.jpg.asset.json";
 
 const nav = [
   { to: "/", label: "Home / My Work", icon: Home },
@@ -11,7 +12,7 @@ const nav = [
   { to: "/contracts", label: "Contract & Document Intelligence", icon: Library },
   { to: "/vendors", label: "Supplier / Vendor Intelligence", icon: Building2 },
   { to: "/monitoring", label: "Execution Monitoring", icon: Activity },
-  { to: "/control-tower", label: "Control Tower", icon: Gauge },
+  { to: "/control-tower", label: "Value Protection Command Center", icon: Gauge },
   { to: "/governance", label: "Knowledge & Governance", icon: ShieldCheck },
 ];
 
@@ -66,12 +67,15 @@ export function AppLayout({ children, title, subtitle }: { children: ReactNode; 
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-              {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+          <div className="flex items-center justify-between px-6 py-4 gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <img src={citgoLogo.url} alt="CITGO" className="h-10 w-auto rounded-sm shrink-0 border border-border bg-white p-1" />
+              <div className="min-w-0">
+                <h1 className="text-xl font-semibold tracking-tight truncate">{title}</h1>
+                {subtitle && <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="hidden sm:inline-flex text-[10px] uppercase tracking-wider rounded-full border border-border bg-card px-2.5 py-1 text-muted-foreground">
                 Source-to-Contract Intelligence · Klydo Workflow · Governance · AI Assistant
               </span>

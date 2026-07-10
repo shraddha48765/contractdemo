@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 
 export const Route = createFileRoute("/control-tower")({
-  head: () => ({ meta: [{ title: "Control Tower — Contract Intelligence" }] }),
+  head: () => ({ meta: [{ title: "Value Protection Command Center — Contract Intelligence" }] }),
   component: ControlTower,
 });
 
@@ -127,12 +127,15 @@ function ControlTower() {
 
   return (
     <AppLayout
-      title="Control Tower"
-      subtitle="Portfolio visibility across source-to-contract decisions, execution exceptions, value protection, and renewal risk."
+      title="Value Protection Command Center"
+      subtitle="Portfolio visibility across source-to-contract decisions, execution exceptions, value protection, and renewal risk. Target: 7% modeled value protection per contract."
     >
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="inline-block text-[11px] font-medium rounded-full border border-accent2/40 bg-accent2/10 text-accent2 px-2 py-0.5">
           Modeled demo metrics
+        </span>
+        <span className="inline-block text-[11px] font-medium rounded-full border border-success/40 bg-success/10 text-success px-2 py-0.5">
+          7% modeled value protection target per contract
         </span>
       </div>
 

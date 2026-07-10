@@ -6,7 +6,7 @@ import { vendors, evidencePack, contractIntelligenceRecs, sourceArtifacts, vendo
 import { KlydoTaskCard } from "@/components/KlydoTaskCard";
 import { SourceChip } from "@/components/SourceChip";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles } from "lucide-react";
+import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles, Users, Download } from "lucide-react";
 
 export const Route = createFileRoute("/requests_/$id")({
   head: () => ({ meta: [{ title: "Industrial Maintenance Services SOW — Active Request" }] }),
@@ -279,31 +279,58 @@ function KlydoWorkflow() {
     "Signature & activation",
     "Execution monitoring",
   ];
+  const [blueprint, setBlueprint] = useState<"pending" | "confirmed" | "modify">("pending");
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-3">Workflow timeline</h3>
-        <ol className="space-y-2 text-sm">
-          {steps.map((s, i) => {
-            const stageIdx = state.contractActivated ? 11 : state.redlineUploaded ? 6 : state.supplierConfirmed ? 4 : 1;
-            const done = i < stageIdx;
-            const current = i === stageIdx;
-            return (
-              <li key={s} className="flex items-center gap-3">
-                <div className={`h-6 w-6 rounded-full grid place-items-center text-[10px] font-medium ${done ? "bg-success text-success-foreground" : current ? "bg-accent2 text-white" : "bg-muted text-muted-foreground"}`}>
-                  {done ? "✓" : i + 1}
-                </div>
-                <span className={done ? "text-muted-foreground line-through" : current ? "font-medium" : ""}>{s}</span>
-                {current && <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5">in progress</span>}
-              </li>
-            );
-          })}
-        </ol>
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-accent2/5 border-accent2/30 p-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-accent2 font-semibold">Blueprint</div>
+            <div className="text-sm font-semibold mt-0.5">Source-to-Contract Intelligence Lifecycle · Industrial Maintenance Services</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Intake → Category strategy → Sourcing path → RFP trigger → Shortlist → Comparison → Award → Contract package → Approvals → Signature → Monitoring
+            </p>
+          </div>
+          {blueprint === "pending" && (
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setBlueprint("confirmed")} className="text-xs font-medium px-3 py-1.5 rounded-md bg-accent2 text-white hover:opacity-90">Confirm Blueprint</button>
+              <button onClick={() => setBlueprint("modify")} className="text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted">Modify Blueprint</button>
+            </div>
+          )}
+          {blueprint === "confirmed" && (
+            <span className="text-[11px] rounded-full bg-success/15 text-success border border-success/30 px-2.5 py-1 font-medium">Blueprint Confirmed</span>
+          )}
+          {blueprint === "modify" && (
+            <span className="text-[11px] rounded-full bg-warning/15 text-warning border border-warning/30 px-2.5 py-1 font-medium">Modification requested · routed to Procurement Manager</span>
+          )}
+        </div>
       </div>
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-sm font-semibold mb-3">Klydo work items</h3>
-        <div className="space-y-2">
-          {requestTasks.map((t) => <KlydoTaskCard key={t.id} task={t} compact />)}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-3">Workflow timeline</h3>
+          <ol className="space-y-2 text-sm">
+            {steps.map((s, i) => {
+              const stageIdx = state.contractActivated ? 11 : state.redlineUploaded ? 6 : state.supplierConfirmed ? 4 : 1;
+              const done = i < stageIdx;
+              const current = i === stageIdx;
+              return (
+                <li key={s} className="flex items-center gap-3">
+                  <div className={`h-6 w-6 rounded-full grid place-items-center text-[10px] font-medium ${done ? "bg-success text-success-foreground" : current ? "bg-accent2 text-white" : "bg-muted text-muted-foreground"}`}>
+                    {done ? "✓" : i + 1}
+                  </div>
+                  <span className={done ? "text-muted-foreground line-through" : current ? "font-medium" : ""}>{s}</span>
+                  {current && <span className="text-[10px] rounded bg-accent2/15 text-accent2 px-1.5 py-0.5">in progress</span>}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-3">Klydo work items</h3>
+          <div className="space-y-2">
+            {requestTasks.map((t) => <KlydoTaskCard key={t.id} task={t} compact />)}
+          </div>
         </div>
       </div>
     </div>
@@ -660,66 +687,107 @@ function DraftSOW() {
     { h: "9. Compliance", c: "Insurance, safety program, technician certification required.", src: "apex-insurance" },
     { h: "10. Renewal", c: "120-day renewal review window prior to expiration." },
   ];
+
+  const alerts = [
+    { level: "warn" as const, title: "Prior scope gap prevented", body: "Weekend emergency coverage added to Exhibit D upfront based on prior change-order history.", value: "$74K modeled", sources: ["prior-change-order", "exhibit-d"] },
+    { level: "info" as const, title: "Escalation cap applied", body: "3% annual escalation cap inserted per approved clause library.", sources: ["escalation-cap-clause"] },
+    { level: "info" as const, title: "Service credit clause inserted", body: "1.5% credit trigger on two consecutive SLA misses.", sources: ["service-credit-clause"] },
+    { level: "warn" as const, title: "Awaiting supplier confirmation", body: "Parties clause will finalize once buyer confirms award direction.", sources: [] },
+  ];
+
   return (
-    <div className="space-y-4 max-w-3xl">
-      <div className="rounded-xl border border-warning/40 bg-warning/5 p-4">
-        <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
-          <div className="flex-1">
-            <div className="text-sm font-semibold">Prior Scope Gap Prevented</div>
-            <p className="text-xs mt-0.5">Prior change order showed weekend emergency coverage was added after award. The new Exhibit D draft includes weekend emergency coverage upfront.</p>
-            <div className="text-xs mt-1 font-medium text-warning">$74K modeled change-order exposure prevented</div>
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              <SourceChip id="prior-change-order" />
-              <SourceChip id="exhibit-d" />
+    <div className="space-y-3">
+      {/* Action bar */}
+      <div className="rounded-xl border bg-card px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold">Draft SOW / Exhibit D</h3>
+          <p className="text-[11px] text-muted-foreground">Document-style editor · governed evidence and alerts on the right.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <ActionBtn icon={<Sparkles className="h-3.5 w-3.5" />} label="Generate" primary />
+          <ActionBtn icon={<FileText className="h-3.5 w-3.5" />} label="Edit" />
+          <ActionBtn icon={<Users className="h-3.5 w-3.5" />} label="Add Collaborator" />
+          <ActionBtn icon={<Download className="h-3.5 w-3.5" />} label="Download" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Left: document canvas */}
+        <div className="lg:col-span-2 rounded-xl border bg-white shadow-sm">
+          <div className="border-b px-6 py-4 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Exhibit D — Statement of Work</div>
+              <div className="text-base font-semibold text-slate-900">Industrial Maintenance Services · Renewal 2026</div>
             </div>
+            <span className="text-[10px] rounded bg-warning/15 text-warning px-1.5 py-0.5">Draft v0.3</span>
+          </div>
+          <div className="px-8 py-6 text-slate-800 space-y-5 min-h-[520px]" contentEditable suppressContentEditableWarning>
+            {sections.map((s) => (
+              <section key={s.h}>
+                <h4 className="text-sm font-semibold text-slate-900">{s.h}</h4>
+                <p className="text-sm mt-1 leading-relaxed">{s.c}</p>
+              </section>
+            ))}
+            <p className="text-[11px] text-slate-400 italic pt-4 border-t">— End of draft —</p>
           </div>
         </div>
-      </div>
 
-      <div className="rounded-xl border bg-card p-4">
-        <div className="text-xs font-semibold mb-2">Generated from</div>
-        <div className="flex flex-wrap gap-1.5 text-[11px]">
-          {[
-            ["Prior Exhibit D / Scope of Work","exhibit-d"],
-            ["Supplier response comparison",""],
-            ["Approved clause library","service-credit-clause"],
-            ["Prior change orders","prior-change-order"],
-            ["HSSE requirements","exhibit-e"],
-            ["Pricing / WRBS references","exhibit-c1"],
-            ["SLA playbook","category-playbook-ims"],
-          ].map(([label, id]) => (
-            <span key={label} className="rounded border px-2 py-0.5">{label}</span>
-          ))}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          <SourceChip id="prior-change-order" />
-          <SourceChip id="exhibit-d" />
-          <SourceChip id="apex-rate-card-v2" />
-        </div>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-semibold">Draft SOW / Exhibit D Builder</h3>
-            <p className="text-xs text-muted-foreground">Generated from approved template + governed evidence.</p>
-          </div>
-          {!state.supplierConfirmed && (
-            <span className="text-[11px] rounded bg-warning/15 text-warning px-2 py-0.5">Awaiting supplier confirmation</span>
-          )}
-        </div>
+        {/* Right: alerts + sources */}
         <div className="space-y-3">
-          {sections.map((s) => (
-            <div key={s.h} className="border-l-2 border-accent2/40 pl-3">
-              <div className="text-xs font-semibold">{s.h}</div>
-              <div className="text-sm text-muted-foreground mt-0.5">{s.c}</div>
-              {s.src && <div className="mt-1"><SourceChip id={s.src} /></div>}
+          <div className="rounded-xl border bg-card">
+            <div className="px-4 py-2.5 border-b text-xs font-semibold flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 text-warning" /> Draft Alerts
             </div>
-          ))}
+            <div className="p-3 space-y-2">
+              {alerts.map((a) => (
+                <div key={a.title} className={`rounded-md border p-2.5 text-xs ${a.level === "warn" ? "border-warning/40 bg-warning/5" : "border-accent2/30 bg-accent2/5"}`}>
+                  <div className="font-medium text-[12px]">{a.title}</div>
+                  <div className="text-muted-foreground mt-0.5">{a.body}</div>
+                  {a.value && <div className="text-[11px] font-medium text-warning mt-1">{a.value}</div>}
+                  {a.sources.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {a.sources.map((s) => <SourceChip key={s} id={s} />)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card">
+            <div className="px-4 py-2.5 border-b text-xs font-semibold">Governed Sources</div>
+            <div className="p-3 flex flex-wrap gap-1">
+              {["prior-change-order","exhibit-d","apex-rate-card-v2","escalation-cap-clause","service-credit-clause","emergency-coverage","apex-insurance","category-playbook-ims"].map((s) => (
+                <SourceChip key={s} id={s} />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card">
+            <div className="px-4 py-2.5 border-b text-xs font-semibold">Collaborators</div>
+            <div className="p-3 text-xs space-y-1.5">
+              <div className="flex items-center justify-between"><span>M. Ortiz · Buyer</span><span className="text-[10px] text-muted-foreground">Owner</span></div>
+              <div className="flex items-center justify-between"><span>K. Nguyen · Legal</span><span className="text-[10px] text-muted-foreground">Reviewer</span></div>
+              <div className="flex items-center justify-between text-muted-foreground"><span>+ Add collaborator</span><span></span></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ActionBtn({ icon, label, primary }: { icon: React.ReactNode; label: string; primary?: boolean }) {
+  return (
+    <button
+      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border transition ${
+        primary
+          ? "bg-accent2 text-white border-accent2 hover:opacity-90"
+          : "bg-background border-border hover:bg-muted"
+      }`}
+    >
+      {icon} {label}
+    </button>
   );
 }
 

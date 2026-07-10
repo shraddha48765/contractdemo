@@ -82,6 +82,26 @@ export function AIAssistant({ open, onClose, screenPath }: { open: boolean; onCl
   }, [screenPath]);
 
   const [thread, setThread] = useState<{ q: string; a: string; sources: string[] }[]>([]);
+  const [input, setInput] = useState("");
+
+  function submitInput() {
+    const q = input.trim();
+    if (!q) return;
+    const lower = q.toLowerCase();
+    const match = prompts.find((p) => {
+      const words = lower.split(/\s+/).filter((w) => w.length > 3);
+      return words.some((w) => p.q.toLowerCase().includes(w));
+    });
+    const response = match
+      ? { q, a: match.a, sources: match.sources }
+      : {
+          q,
+          a: "No governed answer available for this prompt in the demo. Try one of the suggested prompts, which are backed by seeded source artifacts (contracts, exhibits, SLA logs, invoices, benchmarks).",
+          sources: [],
+        };
+    setThread((t) => [...t, response]);
+    setInput("");
+  }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -117,17 +137,40 @@ export function AIAssistant({ open, onClose, screenPath }: { open: boolean; onCl
           ))}
         </div>
 
-        <div className="border-t bg-muted/30 p-3 space-y-1.5">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-1">Suggested prompts</p>
-          {prompts.map((p, i) => (
+        <div className="border-t bg-muted/30 p-3 space-y-2">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-1 mb-1.5">Suggested prompts</p>
+            <div className="space-y-1">
+              {prompts.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setThread((t) => [...t, p])}
+                  className="w-full text-left text-xs rounded-md border bg-card px-3 py-2 hover:bg-accent transition flex items-start gap-2"
+                >
+                  <Send className="h-3 w-3 mt-0.5 text-accent2 shrink-0" /> {p.q}
+                </button>
+              ))}
+            </div>
+          </div>
+          <form
+            onSubmit={(e) => { e.preventDefault(); submitInput(); }}
+            className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5 focus-within:ring-1 focus-within:ring-accent2"
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask the AI Assistant…"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
             <button
-              key={i}
-              onClick={() => setThread((t) => [...t, p])}
-              className="w-full text-left text-xs rounded-md border bg-card px-3 py-2 hover:bg-accent transition flex items-start gap-2"
+              type="submit"
+              disabled={!input.trim()}
+              className="rounded-md bg-accent2 text-white p-1.5 hover:opacity-90 disabled:opacity-40"
+              aria-label="Send"
             >
-              <Send className="h-3 w-3 mt-0.5 text-accent2 shrink-0" /> {p.q}
+              <Send className="h-3.5 w-3.5" />
             </button>
-          ))}
+          </form>
         </div>
       </SheetContent>
     </Sheet>
