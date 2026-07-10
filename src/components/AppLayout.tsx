@@ -69,7 +69,12 @@ export function AppLayout({ children, title, subtitle }: { children: ReactNode; 
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
           <div className="flex items-center justify-between px-6 py-4 gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              <img src={citgoLogo.url} alt="CITGO" className="h-10 w-auto rounded-sm shrink-0 border border-border bg-white p-1" />
+              <img
+                src="/citgo-logo.png"
+                alt="CITGO"
+                onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement?.classList.add("citgo-logo-fallback"); }}
+                className="h-10 w-auto rounded-sm shrink-0 border border-border bg-white p-1"
+              />
               <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-tight truncate">{title}</h1>
                 {subtitle && <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
