@@ -678,103 +678,498 @@ function Leak({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DraftSOW() {
-  const { state } = useDemo();
-  const vendorLine = state.supplierConfirmed ? "Apex Industrial Services" : "[Pending supplier confirmation]";
-  const sections = [
-    { h: "1. Parties", c: `Buyer and ${vendorLine}.` },
-    { h: "2. Scope of services", c: "Preventive and corrective industrial maintenance across 6 sites.", src: "sow-template" },
-    { h: "3. Term", c: "Three (3) years from contract activation." },
-    { h: "4. Pricing", c: "Labor rate card + materials pass-through.", src: "apex-rate-card-v2" },
-    { h: "5. Escalation", c: "3% annual labor-rate escalation cap.", src: "escalation-cap-clause" },
-    { h: "6. SLA", c: "4-hour emergency response · 95% monthly completion.", src: "emergency-coverage" },
-    { h: "7. Service credit", c: "1.5% credit if SLA missed for two consecutive months.", src: "service-credit-clause" },
-    { h: "8. Change orders", c: "Approval required for change orders above $25K." },
-    { h: "9. Compliance", c: "Insurance, safety program, technician certification required.", src: "apex-insurance" },
-    { h: "10. Renewal", c: "120-day renewal review window prior to expiration." },
-  ];
+// ============================================================================
+// SOW Draft Studio (rebuilt Draft SOW tab)
+// Self-contained: local state only, seeded demo packet, upload intake,
+// track-changes-style AI suggestions with Accept/Reject/Modify, audit trail.
+// ============================================================================
 
-  const alerts = [
-    { level: "warn" as const, title: "Prior scope gap prevented", body: "Weekend emergency coverage added to Exhibit D upfront based on prior change-order history.", value: "$74K modeled", sources: ["prior-change-order", "exhibit-d"] },
-    { level: "info" as const, title: "Escalation cap applied", body: "3% annual escalation cap inserted per approved clause library.", sources: ["escalation-cap-clause"] },
-    { level: "info" as const, title: "Service credit clause inserted", body: "1.5% credit trigger on two consecutive SLA misses.", sources: ["service-credit-clause"] },
-    { level: "warn" as const, title: "Awaiting supplier confirmation", body: "Parties clause will finalize once buyer confirms award direction.", sources: [] },
+type SuggestionStatus = "pending" | "accepted" | "rejected" | "modified";
+type Suggestion = {
+  id: string;
+  section: string;
+  classification: "Gap" | "Conflict" | "Fallback Clause" | "Value Protection" | "Needs Review" | "Covered" | "Variant" | "Redline Risk";
+  governance: "AI recommendation only" | "Human approval required" | "Eligible for low-risk auto-apply";
+  kind: "insert" | "delete" | "replace";
+  before?: string;
+  after: string;
+  why: string;
+  sources: string[];
+  status: SuggestionStatus;
+};
+
+type SourceDoc = {
+  id: string;
+  name: string;
+  type: string;
+  status: "Ready" | "Applied" | "Drafting" | "Needs Review" | "Pending Classification" | "Uploaded / Intake Complete";
+  origin: "Seeded" | "Uploaded";
+  uploadedAt?: string;
+};
+
+type OutlineStatus = "none" | "ai" | "review" | "accepted" | "conflict";
+type OutlineItem = { id: string; label: string; status: OutlineStatus };
+
+type AuditEvent = { id: string; ts: string; actor: string; source: string; text: string };
+
+const SEED_DOCS: SourceDoc[] = [
+  { id: "prior-sow", name: "Prior Maintenance Services SOW", type: "SOW", status: "Applied", origin: "Seeded" },
+  { id: "vendor-redline-v3", name: "Vendor Redline v3", type: "Redline", status: "Needs Review", origin: "Seeded" },
+  { id: "rate-card", name: "Rate Card", type: "Pricing", status: "Applied", origin: "Seeded" },
+  { id: "sla-log", name: "SLA Service Log", type: "Performance", status: "Ready", origin: "Seeded" },
+  { id: "co-history", name: "Prior Change Order History", type: "History", status: "Applied", origin: "Seeded" },
+  { id: "clause-library", name: "Approved Clause Library", type: "Library", status: "Drafting", origin: "Seeded" },
+  { id: "invoice-sample", name: "Invoice Sample", type: "Invoice", status: "Ready", origin: "Seeded" },
+];
+
+const SEED_OUTLINE: OutlineItem[] = [
+  { id: "s-need", label: "Business Need", status: "none" },
+  { id: "s-scope", label: "Scope of Work", status: "accepted" },
+  { id: "s-sla", label: "Emergency Response SLA", status: "conflict" },
+  { id: "s-pm", label: "Preventive Maintenance", status: "none" },
+  { id: "s-mat", label: "Materials Pass-Through", status: "review" },
+  { id: "s-rate", label: "Rate Card / Pricing", status: "accepted" },
+  { id: "s-credit", label: "Service Credits", status: "ai" },
+  { id: "s-co", label: "Change Order Approval", status: "ai" },
+  { id: "s-safety", label: "Safety & Insurance", status: "none" },
+  { id: "s-cert", label: "Technician Certifications", status: "review" },
+  { id: "s-renew", label: "Renewal Review", status: "none" },
+];
+
+const SEED_SUGGESTIONS: Suggestion[] = [
+  {
+    id: "sg-1",
+    section: "Scope of Work",
+    classification: "Gap",
+    governance: "Human approval required",
+    kind: "insert",
+    after: "Weekend emergency coverage (Sat–Sun, 06:00–22:00) included in base scope; no separate change order required.",
+    why: "Prior change-order history shows weekend coverage was added mid-term at premium rate. Closing the gap upfront prevents repeat leakage.",
+    sources: ["prior-change-order", "exhibit-d"],
+    status: "pending",
+  },
+  {
+    id: "sg-2",
+    section: "Emergency Response SLA",
+    classification: "Conflict",
+    governance: "Human approval required",
+    kind: "replace",
+    before: "Supplier shall respond to emergency events within eight (8) business hours.",
+    after: "Supplier shall respond to emergency events within four (4) hours, 24×7, measured from ticket acknowledgement.",
+    why: "Vendor Redline v3 softens the approved 4-hour response to 8 business hours. Approved position is 4-hour, 24×7.",
+    sources: ["emergency-coverage", "apex-redline-v3"],
+    status: "pending",
+  },
+  {
+    id: "sg-3",
+    section: "Service Credits",
+    classification: "Fallback Clause",
+    governance: "Human approval required",
+    kind: "insert",
+    after: "If monthly service completion target is missed for two consecutive months, Supplier shall issue a 1.5% service credit against the following month's invoice.",
+    why: "Vendor Redline removed service credit language. Restoring approved fallback preserves performance enforcement.",
+    sources: ["service-credit-clause", "clause-library"],
+    status: "pending",
+  },
+  {
+    id: "sg-4",
+    section: "Rate Card / Pricing",
+    classification: "Value Protection",
+    governance: "Eligible for low-risk auto-apply",
+    kind: "insert",
+    after: "Labor rates governed by Exhibit B Rate Card. Annual escalation capped at 3% CPI-linked.",
+    why: "Approved rate card and 3% escalation cap from clause library. Standard value protection insertion.",
+    sources: ["apex-rate-card-v2", "escalation-cap-clause"],
+    status: "pending",
+  },
+  {
+    id: "sg-5",
+    section: "Technician Certifications",
+    classification: "Needs Review",
+    governance: "Human approval required",
+    kind: "insert",
+    after: "All assigned technicians shall hold current OSHA 30 and site-specific safety certifications; certification records provided quarterly.",
+    why: "Certification clause missing from current draft; required by category playbook.",
+    sources: ["clause-library", "apex-insurance"],
+    status: "pending",
+  },
+  {
+    id: "sg-6",
+    section: "Materials Pass-Through",
+    classification: "Variant",
+    governance: "AI recommendation only",
+    kind: "replace",
+    before: "Materials billed at cost plus reasonable handling.",
+    after: "Materials billed at documented cost plus handling not to exceed 8%; invoices to include supplier receipts.",
+    why: "Invoice sample shows handling variance up to 14%. Tighter language reduces invoice leakage.",
+    sources: ["invoice-sample", "clause-library"],
+    status: "pending",
+  },
+];
+
+const REVIEWERS = ["Legal Reviewer", "Finance / Cost Control", "Business SME", "Contract Owner", "Procurement Manager"];
+
+function DraftSOW() {
+  const [packetLoaded, setPacketLoaded] = useState(true);
+  const [docs, setDocs] = useState<SourceDoc[]>(SEED_DOCS);
+  const [outline] = useState<OutlineItem[]>(SEED_OUTLINE);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(SEED_SUGGESTIONS);
+  const [selectedId, setSelectedId] = useState<string>(SEED_SUGGESTIONS[0].id);
+  const [modifyText, setModifyText] = useState<string>("");
+  const [comments, setComments] = useState<{ id: string; who: string; text: string; resolved: boolean }[]>([
+    { id: "c1", who: "K. Nguyen · Legal", text: "Confirm fallback SLA language before send to vendor.", resolved: false },
+    { id: "c2", who: "R. Patel · Finance", text: "Validate rate-card reference matches Exhibit B.", resolved: false },
+  ]);
+  const [newComment, setNewComment] = useState("");
+  const [audit, setAudit] = useState<AuditEvent[]>([
+    { id: "a0", ts: "09:14 AM", actor: "System", source: "Seeded Evidence", text: "Demo contract packet loaded (7 documents)." },
+    { id: "a1", ts: "09:15 AM", actor: "System", source: "AI", text: "SOW draft v0.3 generated from packet." },
+  ]);
+  const [assistantMsg, setAssistantMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const selected = suggestions.find((s) => s.id === selectedId) ?? suggestions[0];
+
+  const reviewed = suggestions.filter((s) => s.status !== "pending").length;
+  const total = suggestions.length;
+  const pct = Math.round((reviewed / total) * 100);
+  const unresolved = comments.filter((c) => !c.resolved).length;
+
+  const pushAudit = (text: string, actor = "You · Contract Owner", source = "Human") =>
+    setAudit((a) => [{ id: `a${Date.now()}`, ts: nowTs(), actor, source, text }, ...a]);
+
+  const act = (id: string, status: SuggestionStatus, note?: string) => {
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status, ...(note ? { after: note } : {}) } : s)));
+    const s = suggestions.find((x) => x.id === id);
+    if (!s) return;
+    const verb = status === "accepted" ? "accepted" : status === "rejected" ? "rejected" : "modified";
+    pushAudit(`${verb[0].toUpperCase() + verb.slice(1)} suggestion "${s.classification} · ${s.section}"`, "You · Contract Owner", "Human + AI");
+  };
+
+  const applyLowRisk = () => {
+    const ids = suggestions.filter((s) => s.status === "pending" && s.governance === "Eligible for low-risk auto-apply").map((s) => s.id);
+    if (!ids.length) return;
+    setSuggestions((prev) => prev.map((s) => (ids.includes(s.id) ? { ...s, status: "accepted" } : s)));
+    pushAudit(`Auto-applied ${ids.length} low-risk suggestion(s).`, "System", "AI");
+  };
+
+  const nextSuggestion = (dir: 1 | -1) => {
+    const idx = suggestions.findIndex((s) => s.id === selectedId);
+    const n = (idx + dir + suggestions.length) % suggestions.length;
+    setSelectedId(suggestions[n].id);
+    setModifyText("");
+  };
+
+  const assignReviewer = (id: string, r: string) => {
+    pushAudit(`Assigned ${r} to "${suggestions.find((s) => s.id === id)?.section}".`, "You · Contract Owner", "Human");
+  };
+
+  const loadPacket = () => {
+    setPacketLoaded(true);
+    setDocs(SEED_DOCS);
+    setSuggestions(SEED_SUGGESTIONS);
+    pushAudit("Demo contract packet loaded (7 documents).", "System", "Seeded Evidence");
+  };
+
+  const generateSow = () => {
+    pushAudit("SOW draft regenerated from packet + accepted suggestions.", "System", "AI");
+  };
+
+  const handleUpload = (files: FileList | null) => {
+    if (!files || !files.length) return;
+    const now = new Date().toLocaleString();
+    const added: SourceDoc[] = Array.from(files).map((f, i) => ({
+      id: `up-${Date.now()}-${i}`,
+      name: f.name,
+      type: (f.name.split(".").pop() || "file").toUpperCase(),
+      status: "Uploaded / Intake Complete",
+      origin: "Uploaded",
+      uploadedAt: now,
+    }));
+    setDocs((d) => [...added, ...d]);
+    added.forEach((a) => pushAudit(`Uploaded "${a.name}". Basic intake complete. Deep extraction requires the configured document intelligence pipeline.`, "You · Contract Owner", "Uploaded Document"));
+  };
+
+  const downloadSow = () => {
+    const body = buildSowText(suggestions);
+    const blob = new Blob([body], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Industrial_Maintenance_SOW_ExhibitD_v0.4.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+    pushAudit("SOW downloaded (Exhibit D v0.4).", "You · Contract Owner", "Human");
+  };
+
+  const exportEvidence = () => {
+    const body = buildEvidencePack(docs, suggestions, audit);
+    const blob = new Blob([body], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Evidence_Pack.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+    pushAudit("Evidence pack exported.", "You · Contract Owner", "Human");
+  };
+
+  const saveToWorkspace = () => pushAudit("SOW saved to workspace.", "You · Contract Owner", "Human");
+  const saveToDrive = () => pushAudit("SOW saved to Drive (demo).", "You · Contract Owner", "Human");
+  const submitForReview = () => pushAudit("SOW submitted for review.", "You · Contract Owner", "Human");
+
+  const addComment = () => {
+    if (!newComment.trim()) return;
+    setComments((c) => [...c, { id: `c${Date.now()}`, who: "You · Contract Owner", text: newComment.trim(), resolved: false }]);
+    pushAudit("Comment added.", "You · Contract Owner", "Human");
+    setNewComment("");
+  };
+  const resolveComment = (id: string) => {
+    setComments((c) => c.map((x) => (x.id === id ? { ...x, resolved: true } : x)));
+    pushAudit("Comment resolved.", "You · Contract Owner", "Human");
+  };
+
+  const assistantPrompts = [
+    "Why was this clause suggested?",
+    "Which source supports this change?",
+    "What happens if I reject this fallback?",
+    "Which suggestions still need legal review?",
+    "Summarize unresolved SOW issues",
   ];
+  const askAssistant = (q: string) => {
+    const canned: Record<string, string> = {
+      "Why was this clause suggested?": `${selected.classification} · ${selected.section}: ${selected.why}`,
+      "Which source supports this change?": `Sources: ${selected.sources.join(", ")}`,
+      "What happens if I reject this fallback?": "Rejection is logged in the audit trail. Fallback clause is not applied; risk remains open for Redline Review.",
+      "Which suggestions still need legal review?": `${suggestions.filter((s) => s.status === "pending" && s.governance === "Human approval required").length} suggestions require legal review.`,
+      "Summarize unresolved SOW issues": `${suggestions.filter((s) => s.status === "pending").length} suggestions pending · ${unresolved} unresolved comments · ${outline.filter((o) => o.status === "conflict" || o.status === "review").length} outline items flagged.`,
+    };
+    setAssistantMsg(canned[q] || "See governed sources on the right.");
+  };
 
   return (
     <div className="space-y-3">
-      {/* Action bar */}
-      <div className="rounded-xl border bg-card px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h3 className="text-sm font-semibold">Draft SOW / Exhibit D</h3>
-          <p className="text-[11px] text-muted-foreground">Document-style editor · governed evidence and alerts on the right.</p>
+      {/* Top bar */}
+      <div className="rounded-xl border bg-card px-4 py-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">SOW Draft Studio</div>
+            <div className="text-sm font-semibold truncate">Industrial Maintenance Services SOW / Exhibit D</div>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+              <Badge tone="warn">Draft in Progress</Badge>
+              <Badge tone="info">Initial Review</Badge>
+              <Badge tone="ok"><span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />Live Review</Badge>
+              <button className="ml-1 text-muted-foreground hover:text-foreground underline underline-offset-2">Version history</button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StudioBtn onClick={generateSow} icon={<Sparkles className="h-3.5 w-3.5" />} label="Generate SOW" primary />
+            <StudioBtn onClick={saveToWorkspace} icon={<FileText className="h-3.5 w-3.5" />} label="Save to Workspace" />
+            <StudioBtn onClick={saveToDrive} icon={<Upload className="h-3.5 w-3.5" />} label="Save to Drive" />
+            <StudioBtn onClick={downloadSow} icon={<Download className="h-3.5 w-3.5" />} label="Download SOW" />
+            <StudioBtn onClick={exportEvidence} icon={<Download className="h-3.5 w-3.5" />} label="Export Evidence Pack" />
+            <StudioBtn onClick={submitForReview} icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Submit for Review" />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ActionBtn icon={<Sparkles className="h-3.5 w-3.5" />} label="Generate" primary />
-          <ActionBtn icon={<FileText className="h-3.5 w-3.5" />} label="Edit" />
-          <ActionBtn icon={<Users className="h-3.5 w-3.5" />} label="Add Collaborator" />
-          <ActionBtn icon={<Download className="h-3.5 w-3.5" />} label="Download" />
+        {/* Progress */}
+        <div className="mt-2.5 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <div className="flex-1 min-w-[160px]">
+            <div className="flex justify-between mb-0.5"><span>{reviewed} of {total} suggestions reviewed</span><span>{pct}%</span></div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-accent2" style={{ width: `${pct}%` }} /></div>
+          </div>
+          <div>{unresolved} unresolved comment{unresolved === 1 ? "" : "s"}</div>
+          <div className="flex items-center gap-1">
+            <button className="rounded border px-1.5 py-0.5 hover:bg-muted" onClick={() => nextSuggestion(-1)}>‹ Prev</button>
+            <button className="rounded border px-1.5 py-0.5 hover:bg-muted" onClick={() => nextSuggestion(1)}>Next ›</button>
+            <button className="rounded border px-1.5 py-0.5 hover:bg-muted" onClick={applyLowRisk}>Apply all low-risk</button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Left: document canvas */}
-        <div className="lg:col-span-2 rounded-xl border bg-white shadow-sm">
-          <div className="border-b px-6 py-4 flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Exhibit D — Statement of Work</div>
-              <div className="text-base font-semibold text-slate-900">Industrial Maintenance Services · Renewal 2026</div>
-            </div>
-            <span className="text-[10px] rounded bg-warning/15 text-warning px-1.5 py-0.5">Draft v0.3</span>
-          </div>
-          <div className="px-8 py-6 text-slate-800 space-y-5 min-h-[520px]" contentEditable suppressContentEditableWarning>
-            {sections.map((s) => (
-              <section key={s.h}>
-                <h4 className="text-sm font-semibold text-slate-900">{s.h}</h4>
-                <p className="text-sm mt-1 leading-relaxed">{s.c}</p>
-              </section>
-            ))}
-            <p className="text-[11px] text-slate-400 italic pt-4 border-t">— End of draft —</p>
-          </div>
-        </div>
-
-        {/* Right: alerts + sources */}
-        <div className="space-y-3">
+      <div className="grid grid-cols-12 gap-3">
+        {/* LEFT: Source docs + outline */}
+        <div className="col-span-12 lg:col-span-3 space-y-3">
           <div className="rounded-xl border bg-card">
-            <div className="px-4 py-2.5 border-b text-xs font-semibold flex items-center gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5 text-warning" /> Draft Alerts
+            <div className="px-3 py-2 border-b text-xs font-semibold flex items-center justify-between">
+              <span>Source Documents</span>
+              <span className="text-[10px] font-normal text-muted-foreground">{docs.length}</span>
             </div>
-            <div className="p-3 space-y-2">
-              {alerts.map((a) => (
-                <div key={a.title} className={`rounded-md border p-2.5 text-xs ${a.level === "warn" ? "border-warning/40 bg-warning/5" : "border-accent2/30 bg-accent2/5"}`}>
-                  <div className="font-medium text-[12px]">{a.title}</div>
-                  <div className="text-muted-foreground mt-0.5">{a.body}</div>
-                  {a.value && <div className="text-[11px] font-medium text-warning mt-1">{a.value}</div>}
-                  {a.sources.length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {a.sources.map((s) => <SourceChip key={s} id={s} />)}
-                    </div>
-                  )}
+            <div className="p-2 space-y-1 max-h-[260px] overflow-auto">
+              {docs.map((d) => (
+                <div key={d.id} className="rounded border px-2 py-1.5 text-[11px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 truncate font-medium text-[12px]">{d.name}</div>
+                    <span className={`text-[9px] px-1 py-0.5 rounded ${d.origin === "Seeded" ? "bg-slate-100 text-slate-600" : "bg-accent2/15 text-accent2"}`}>{d.origin}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5 text-muted-foreground">
+                    <span>{d.type}</span>
+                    <span title={statusTip(d.status)} className={`px-1 py-0.5 rounded text-[9px] ${docStatusClass(d.status)}`}>{d.status}</span>
+                  </div>
+                  {d.uploadedAt && <div className="text-[9px] text-muted-foreground mt-0.5">Uploaded {d.uploadedAt}</div>}
+                </div>
+              ))}
+            </div>
+            <div className="p-2 border-t space-y-1.5">
+              <button className="w-full text-[11px] rounded-md border bg-background hover:bg-muted px-2 py-1.5" onClick={loadPacket}>
+                {packetLoaded ? "Reload Demo Contract Packet" : "Load Demo Contract Packet"}
+              </button>
+              <button className="w-full text-[11px] rounded-md border bg-accent2 text-white hover:opacity-90 px-2 py-1.5 flex items-center justify-center gap-1" onClick={() => fileRef.current?.click()}>
+                <Upload className="h-3 w-3" /> Upload Contract Artifact
+              </button>
+              <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.txt,.xlsx,image/*" className="hidden" onChange={(e) => { handleUpload(e.target.files); e.target.value = ""; }} />
+              <p className="text-[9px] text-muted-foreground leading-snug">Unknown uploads receive basic intake only. Deep extraction requires the configured document intelligence pipeline.</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card">
+            <div className="px-3 py-2 border-b text-xs font-semibold">SOW Outline</div>
+            <div className="p-2 space-y-0.5">
+              {outline.map((o) => (
+                <div key={o.id} className="flex items-center justify-between text-[11px] px-1.5 py-1 rounded hover:bg-muted">
+                  <span>{o.label}</span>
+                  <span className={`text-[9px] px-1 py-0.5 rounded ${outlineClass(o.status)}`}>{outlineLabel(o.status)}</span>
                 </div>
               ))}
             </div>
           </div>
+        </div>
 
+        {/* CENTER: document canvas */}
+        <div className="col-span-12 lg:col-span-6 rounded-xl border bg-white shadow-sm">
+          <div className="border-b px-6 py-3 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Exhibit D — Statement of Work</div>
+              <div className="text-base font-semibold text-slate-900">Industrial Maintenance Services · Renewal 2026</div>
+            </div>
+            <span className="text-[10px] rounded bg-warning/15 text-warning px-1.5 py-0.5">Draft v0.4</span>
+          </div>
+          <div className="px-8 py-6 text-slate-800 space-y-5 min-h-[560px]">
+            {SEED_OUTLINE.map((o) => {
+              const secSug = suggestions.filter((s) => s.section === o.label);
+              const body = sectionBody(o.label);
+              return (
+                <section key={o.id} className="group">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-slate-900">{o.label}</h4>
+                    <div className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 text-[10px] text-slate-500">
+                      <button className="hover:text-slate-900" title="Edit">✎ Edit</button>
+                      <button className="hover:text-slate-900" title="AI Refine">✨ AI Refine</button>
+                      <button className="hover:text-slate-900" title="Add Comment">💬 Comment</button>
+                      <button className="hover:text-slate-900" title="View Sources">🔗 Sources</button>
+                    </div>
+                  </div>
+                  {body && <p className="text-sm mt-1 leading-relaxed">{body}</p>}
+                  {secSug.map((s) => (
+                    <div key={s.id} className={`mt-2 rounded border-l-2 pl-2 pr-2 py-1.5 cursor-pointer text-sm leading-relaxed ${selectedId === s.id ? "bg-amber-50 border-amber-500" : "bg-slate-50 border-slate-300 hover:bg-amber-50/60"}`} onClick={() => { setSelectedId(s.id); setModifyText(""); }}>
+                      <div className="flex items-center gap-1.5 text-[10px] mb-0.5">
+                        <span className={`px-1 py-0.5 rounded ${classificationClass(s.classification)}`}>{s.classification}</span>
+                        <span className="text-slate-500">AI suggestion · {statusLabel(s.status)}</span>
+                      </div>
+                      {s.kind === "replace" && s.before && (
+                        <div className="text-slate-500 line-through text-[13px]">{s.before}</div>
+                      )}
+                      {s.kind === "delete" && s.before && (
+                        <div className="text-red-600 line-through text-[13px]">{s.before}</div>
+                      )}
+                      <div className={`${s.status === "accepted" ? "text-emerald-700" : s.status === "rejected" ? "text-slate-400 line-through" : "text-emerald-700"}`}>
+                        {s.kind === "delete" ? "" : (s.status === "modified" ? s.after : s.after)}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {s.sources.map((src) => <SourceChip key={src} id={src} />)}
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              );
+            })}
+            <p className="text-[11px] text-slate-400 italic pt-4 border-t">— End of draft —</p>
+          </div>
+        </div>
+
+        {/* RIGHT: AI review + collaboration + audit */}
+        <div className="col-span-12 lg:col-span-3 space-y-3">
           <div className="rounded-xl border bg-card">
-            <div className="px-4 py-2.5 border-b text-xs font-semibold">Governed Sources</div>
-            <div className="p-3 flex flex-wrap gap-1">
-              {["prior-change-order","exhibit-d","apex-rate-card-v2","escalation-cap-clause","service-credit-clause","emergency-coverage","apex-insurance","category-playbook-ims"].map((s) => (
-                <SourceChip key={s} id={s} />
-              ))}
+            <div className="px-3 py-2 border-b text-xs font-semibold flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-accent2" /> AI Suggested Change
+            </div>
+            <div className="p-3 space-y-2 text-[11px]">
+              <div className="flex flex-wrap gap-1">
+                <span className={`px-1.5 py-0.5 rounded text-[10px] ${classificationClass(selected.classification)}`}>{selected.classification}</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700">{selected.governance}</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700">{selected.section}</span>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Why</div>
+                <div>{selected.why}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Source evidence</div>
+                <div className="mt-1 flex flex-wrap gap-1">{selected.sources.map((s) => <SourceChip key={s} id={s} />)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Proposed text</div>
+                <textarea className="mt-1 w-full text-[11px] border rounded p-1.5 min-h-[64px]" defaultValue={selected.after} onChange={(e) => setModifyText(e.target.value)} />
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <button className="text-[10px] px-2 py-1 rounded bg-emerald-600 text-white hover:opacity-90" onClick={() => act(selected.id, "accepted")}>Accept</button>
+                <button className="text-[10px] px-2 py-1 rounded bg-red-600 text-white hover:opacity-90" onClick={() => act(selected.id, "rejected")}>Reject</button>
+                <button className="text-[10px] px-2 py-1 rounded border" onClick={() => act(selected.id, "modified", modifyText || selected.after)}>Save Modified</button>
+                <select className="text-[10px] px-1.5 py-1 rounded border bg-background" defaultValue="" onChange={(e) => { if (e.target.value) { assignReviewer(selected.id, e.target.value); e.target.value = ""; } }}>
+                  <option value="">Assign Reviewer…</option>
+                  {REVIEWERS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div className="text-[10px] text-muted-foreground">Status: <span className="font-medium">{statusLabel(selected.status)}</span></div>
             </div>
           </div>
 
           <div className="rounded-xl border bg-card">
-            <div className="px-4 py-2.5 border-b text-xs font-semibold">Collaborators</div>
-            <div className="p-3 text-xs space-y-1.5">
-              <div className="flex items-center justify-between"><span>M. Ortiz · Buyer</span><span className="text-[10px] text-muted-foreground">Owner</span></div>
-              <div className="flex items-center justify-between"><span>K. Nguyen · Legal</span><span className="text-[10px] text-muted-foreground">Reviewer</span></div>
-              <div className="flex items-center justify-between text-muted-foreground"><span>+ Add collaborator</span><span></span></div>
+            <div className="px-3 py-2 border-b text-xs font-semibold">Collaboration</div>
+            <div className="p-3 space-y-2 text-[11px]">
+              <div className="space-y-1">
+                {comments.map((c) => (
+                  <div key={c.id} className={`rounded border p-1.5 ${c.resolved ? "opacity-60" : ""}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[11px]">{c.who}</span>
+                      {!c.resolved && <button className="text-[10px] text-accent2 hover:underline" onClick={() => resolveComment(c.id)}>Resolve</button>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">{c.text}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1">
+                <input className="flex-1 text-[11px] border rounded px-2 py-1" placeholder="Add comment…" value={newComment} onChange={(e) => setNewComment(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addComment()} />
+                <button className="text-[10px] px-2 rounded border hover:bg-muted" onClick={addComment}>Post</button>
+              </div>
+              <div className="text-[10px] text-muted-foreground">Collaborators: M. Ortiz · K. Nguyen · R. Patel · + Add</div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card">
+            <div className="px-3 py-2 border-b text-xs font-semibold flex items-center gap-1.5">
+              <MessageSquareText className="h-3.5 w-3.5" /> Ask about this clause
+            </div>
+            <div className="p-3 space-y-1.5 text-[11px]">
+              <div className="flex flex-wrap gap-1">
+                {assistantPrompts.map((p) => (
+                  <button key={p} className="text-[10px] px-1.5 py-0.5 rounded border hover:bg-muted" onClick={() => askAssistant(p)}>{p}</button>
+                ))}
+              </div>
+              {assistantMsg && <div className="rounded bg-muted p-2 text-[11px]">{assistantMsg}</div>}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card">
+            <div className="px-3 py-2 border-b text-xs font-semibold flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5" /> Audit / Change History
+            </div>
+            <div className="p-2 space-y-1 max-h-[220px] overflow-auto text-[11px]">
+              {audit.map((e) => (
+                <div key={e.id} className="border-l-2 border-slate-200 pl-2 py-0.5">
+                  <div className="text-[11px]">{e.text}</div>
+                  <div className="text-[9px] text-muted-foreground">{e.actor} · {e.ts} · Source: {e.source}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -783,19 +1178,126 @@ function DraftSOW() {
   );
 }
 
-function ActionBtn({ icon, label, primary }: { icon: React.ReactNode; label: string; primary?: boolean }) {
+// ---------- helpers ----------
+function nowTs() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+function statusLabel(s: SuggestionStatus) {
+  return s === "pending" ? "Pending review" : s === "accepted" ? "Accepted" : s === "rejected" ? "Rejected" : "Modified";
+}
+function classificationClass(c: Suggestion["classification"]) {
+  switch (c) {
+    case "Gap": return "bg-amber-100 text-amber-800";
+    case "Conflict": return "bg-red-100 text-red-800";
+    case "Fallback Clause": return "bg-indigo-100 text-indigo-800";
+    case "Value Protection": return "bg-emerald-100 text-emerald-800";
+    case "Needs Review": return "bg-slate-200 text-slate-800";
+    case "Covered": return "bg-slate-100 text-slate-600";
+    case "Variant": return "bg-sky-100 text-sky-800";
+    case "Redline Risk": return "bg-rose-100 text-rose-800";
+  }
+}
+function docStatusClass(s: SourceDoc["status"]) {
+  switch (s) {
+    case "Ready": return "bg-slate-100 text-slate-700";
+    case "Applied": return "bg-emerald-100 text-emerald-800";
+    case "Drafting": return "bg-indigo-100 text-indigo-800";
+    case "Needs Review": return "bg-amber-100 text-amber-800";
+    case "Pending Classification": return "bg-slate-100 text-slate-500";
+    case "Uploaded / Intake Complete": return "bg-accent2/15 text-accent2";
+  }
+}
+function statusTip(s: SourceDoc["status"]) {
+  const m: Record<string, string> = {
+    Ready: "Extracted and ready for review",
+    Applied: "Intelligence has been applied to the draft",
+    Drafting: "Being used in the SOW generation process",
+    "Needs Review": "Requires human decision",
+    "Pending Classification": "Uploaded but not deeply extracted yet",
+    "Uploaded / Intake Complete": "Basic intake complete — deep extraction requires document intelligence pipeline",
+  };
+  return m[s];
+}
+function outlineClass(s: OutlineStatus) {
+  switch (s) {
+    case "none": return "bg-slate-100 text-slate-500";
+    case "ai": return "bg-indigo-100 text-indigo-800";
+    case "review": return "bg-amber-100 text-amber-800";
+    case "accepted": return "bg-emerald-100 text-emerald-800";
+    case "conflict": return "bg-red-100 text-red-800";
+  }
+}
+function outlineLabel(s: OutlineStatus) {
+  return s === "none" ? "OK" : s === "ai" ? "AI suggestion" : s === "review" ? "Needs review" : s === "accepted" ? "Accepted" : "Conflict";
+}
+function sectionBody(section: string): string {
+  const m: Record<string, string> = {
+    "Business Need": "Maintain safe, continuous operation of production assets across six sites with predictable cost and enforceable SLAs.",
+    "Scope of Work": "Preventive and corrective industrial maintenance across six sites, business hours coverage, weekday emergency response.",
+    "Emergency Response SLA": "",
+    "Preventive Maintenance": "Monthly PM cycle per asset class, documented in the CMMS with completion reporting to Buyer.",
+    "Materials Pass-Through": "",
+    "Rate Card / Pricing": "",
+    "Service Credits": "",
+    "Change Order Approval": "",
+    "Safety & Insurance": "Supplier shall maintain safety program aligned with Buyer standards and insurance minimums per Exhibit C.",
+    "Technician Certifications": "",
+    "Renewal Review": "120-day renewal review window prior to expiration.",
+  };
+  return m[section] ?? "";
+}
+function buildSowText(sugs: Suggestion[]): string {
+  const applied = sugs.filter((s) => s.status === "accepted" || s.status === "modified");
+  const rejected = sugs.filter((s) => s.status === "rejected");
+  return [
+    "INDUSTRIAL MAINTENANCE SERVICES SOW — EXHIBIT D",
+    "Draft v0.4",
+    "",
+    ...SEED_OUTLINE.flatMap((o) => {
+      const body = sectionBody(o.label);
+      const secSugs = applied.filter((s) => s.section === o.label);
+      return [
+        `${o.label.toUpperCase()}`,
+        body || "(Governed by attached exhibits and clause library.)",
+        ...secSugs.map((s) => `  • ${s.after}`),
+        "",
+      ];
+    }),
+    `Applied suggestions: ${applied.length} · Rejected: ${rejected.length} · Pending: ${sugs.length - applied.length - rejected.length}`,
+  ].join("\n");
+}
+function buildEvidencePack(docs: SourceDoc[], sugs: Suggestion[], audit: AuditEvent[]): string {
+  return [
+    "EVIDENCE PACK — Industrial Maintenance Services SOW",
+    "",
+    "Source Documents:",
+    ...docs.map((d) => ` - ${d.name} [${d.type}] · ${d.status} · ${d.origin}`),
+    "",
+    "AI Suggestions:",
+    ...sugs.map((s) => ` - [${s.classification}] ${s.section}: ${s.after} (status: ${s.status}; sources: ${s.sources.join(", ")})`),
+    "",
+    "Audit Trail:",
+    ...audit.map((a) => ` - ${a.ts} · ${a.actor} · ${a.source} · ${a.text}`),
+  ].join("\n");
+}
+
+function StudioBtn({ icon, label, primary, onClick }: { icon: React.ReactNode; label: string; primary?: boolean; onClick?: () => void }) {
   return (
     <button
-      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border transition ${
-        primary
-          ? "bg-accent2 text-white border-accent2 hover:opacity-90"
-          : "bg-background border-border hover:bg-muted"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1.5 rounded-md border transition ${
+        primary ? "bg-accent2 text-white border-accent2 hover:opacity-90" : "bg-background border-border hover:bg-muted"
       }`}
     >
       {icon} {label}
     </button>
   );
 }
+function Badge({ tone, children }: { tone: "warn" | "info" | "ok"; children: React.ReactNode }) {
+  const cls = tone === "warn" ? "bg-warning/15 text-warning" : tone === "ok" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700";
+  return <span className={`inline-flex items-center px-1.5 py-0.5 rounded ${cls}`}>{children}</span>;
+}
+
 
 function RedlineReview() {
   const { state, uploadRedline } = useDemo();
