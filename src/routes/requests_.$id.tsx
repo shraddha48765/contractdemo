@@ -19,7 +19,7 @@ const TABS = [
   { id: "supplier", label: "Supplier Review" },
   { id: "evidence", label: "Evidence Pack" },
   { id: "intel", label: "Contract Intelligence" },
-  { id: "sow", label: "Draft SOW" },
+  { id: "sow", label: "SOW Draft Studio" },
   { id: "redline", label: "Redline Review" },
   { id: "approvals", label: "Approvals & History" },
   { id: "signature", label: "Signature & Activation" },
