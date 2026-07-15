@@ -2,23 +2,34 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { useDemo } from "@/lib/store";
 import { useState, useRef } from "react";
-import { vendors, evidencePack, contractIntelligenceRecs, sourceArtifacts, vendorChecklist, negotiationNotes } from "@/lib/mock-data";
+import { vendors, sourceArtifacts, vendorChecklist, negotiationNotes } from "@/lib/mock-data";
 import { KlydoTaskCard } from "@/components/KlydoTaskCard";
 import { SourceChip } from "@/components/SourceChip";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles, Users, Download } from "lucide-react";
+import { WorkspaceProvider } from "@/lib/workspace/WorkspaceProvider";
+import { EvidenceIntelligence } from "./workspace/EvidenceIntelligence";
+import { SowStudio } from "./workspace/SowStudio";
 
 export const Route = createFileRoute("/requests_/$id")({
   head: () => ({ meta: [{ title: "Industrial Maintenance Services SOW — Active Request" }] }),
-  component: RequestWorkspace,
+  component: RequestWorkspaceWrapper,
 });
+
+function RequestWorkspaceWrapper() {
+  const { id } = Route.useParams();
+  return (
+    <WorkspaceProvider requestId={id}>
+      <RequestWorkspace />
+    </WorkspaceProvider>
+  );
+}
 
 const TABS = [
   { id: "summary", label: "Request Summary" },
   { id: "klydo", label: "Klydo Workflow" },
   { id: "supplier", label: "Supplier Review" },
-  { id: "evidence", label: "Evidence Pack" },
-  { id: "intel", label: "Contract Intelligence" },
+  { id: "evidence-intel", label: "Evidence & Intelligence" },
   { id: "sow", label: "SOW Draft Studio" },
   { id: "redline", label: "Redline Review" },
   { id: "approvals", label: "Approvals & History" },
