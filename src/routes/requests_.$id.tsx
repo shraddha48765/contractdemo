@@ -133,9 +133,8 @@ function RequestWorkspace() {
       {tab === "summary" && <RequestSummary />}
       {tab === "klydo" && <KlydoWorkflow />}
       {tab === "supplier" && <SupplierReview />}
-      {tab === "evidence" && <EvidencePackTab />}
-      {tab === "intel" && <ContractIntelTab />}
-      {tab === "sow" && <DraftSOW />}
+      {tab === "evidence-intel" && <EvidenceIntelligence />}
+      {tab === "sow" && <SowStudio />}
       {tab === "redline" && <RedlineReview />}
       {tab === "approvals" && <ApprovalsHistory />}
       {tab === "signature" && <SignatureActivation />}
