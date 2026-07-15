@@ -1,204 +1,267 @@
-import { useMemo, useRef, useState } from "react";
-import { useWorkspace } from "@/lib/workspace/WorkspaceProvider";
+import { useMemo, useState } from "react";
+import { applyFilters, useWorkspace } from "@/lib/workspace/WorkspaceProvider";
 import type { Authority, DocType, EvidenceDocument } from "@/lib/workspace/types";
-import { CheckCircle2, Filter, Search, Upload, FileText, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Check, X, Upload, Search, Filter, ChevronRight, Sparkles } from "lucide-react";
 
-const ALL_AUTHORITIES: Authority[] = [
+const AUTHORITY_ORDER: Authority[] = [
   "Authoritative", "Prior drafting reference", "Commercial evidence",
   "Operational evidence", "Compliance evidence", "External intelligence",
 ];
-const ALL_TYPES: DocType[] = [
-  "SOW", "Contract", "Exhibit", "Redline", "RateCard", "WageSchedule", "PO",
-  "Invoice", "SLA", "ServiceReport", "ChangeOrder", "Certification", "Insurance",
-  "Safety", "ClauseLibrary", "FallbackPlaybook", "Benchmark", "VendorProposal",
-];
+
+const authorityColor: Record<Authority, string> = {
+  "Authoritative": "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+  "Prior drafting reference": "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
+  "Commercial evidence": "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
+  "Operational evidence": "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30",
+  "Compliance evidence": "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  "External intelligence": "bg-slate-500/15 text-slate-700 dark:text-slate-400 border-slate-500/30",
+};
+
+function useFilterOptions(all: EvidenceDocument[]) {
+  return useMemo(() => {
+    const uniq = <T,>(arr: T[]) => Array.from(new Set(arr)).sort();
+    return {
+      sources: uniq(all.map((d) => d.source)) as ("Seeded" | "Uploaded" | "External")[],
+      authorities: AUTHORITY_ORDER.filter((a) => all.some((d) => d.authority === a)),
+      purposes: uniq(all.map((d) => d.purpose)),
+      types: uniq(all.map((d) => d.type)) as DocType[],
+      regions: uniq(all.map((d) => d.region).filter(Boolean) as string[]),
+      topics: uniq(all.flatMap((d) => d.topic ?? [])),
+      vendors: uniq(all.map((d) => d.vendor).filter(Boolean) as string[]),
+    };
+  }, [all]);
+}
+
+function Chip({ active, label, count, onClick, className = "" }: { active: boolean; label: string; count?: number; onClick: () => void; className?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-[11px] rounded-full border px-2 py-0.5 transition ${active ? "bg-accent2 text-white border-accent2" : "bg-card hover:bg-muted border-border text-muted-foreground"} ${className}`}
+    >
+      {label}{count !== undefined && <span className="ml-1 opacity-70">{count}</span>}
+    </button>
+  );
+}
 
 export function EvidenceIntelligence() {
-  const { state, dispatch, filteredDocs, audit } = useWorkspace();
-  const [view, setView] = useState<"set" | "intel">("set");
+  const ws = useWorkspace();
+  const { state, allEvidence, includedEvidence, setFilters, toggleInclude, setIncludeMany, uploadEvidence, confirmEvidenceSet } = ws;
   const filters = state.evidenceSet.filters;
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const includedDocs = filteredDocs.filter((d) => d.included);
-  const summary = useMemo(() => {
-    const gaps: string[] = [];
-    const conflicts: string[] = [];
-    if (includedDocs.some((d) => d.id === "prior-change-order")) gaps.push("Weekend coverage repeatedly added via change order");
-    if (includedDocs.some((d) => d.id === "apex-redline-v3")) conflicts.push("Vendor redline weakens SLA & removes service credits");
-    if (includedDocs.some((d) => d.id === "invoice-1842")) conflicts.push("Invoice handling exceeds approved cap");
-    return { coverage: Math.min(100, Math.round((includedDocs.length / 15) * 100)), gaps, conflicts };
-  }, [includedDocs]);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
-  const toggleMulti = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  // Cascading filters: options only count docs matching *other* active filters.
+  const opts = useFilterOptions(allEvidence);
+  const filtered = useMemo(() => applyFilters(allEvidence, filters), [allEvidence, filters]);
 
-  const onUpload = (files: FileList | null) => {
-    if (!files) return;
-    const now = new Date().toISOString();
-    Array.from(files).forEach(async (f) => {
-      const id = `up-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      let body: string | undefined;
-      if (f.type.startsWith("text/") || f.name.endsWith(".txt") || f.name.endsWith(".md")) {
-        try { body = (await f.text()).slice(0, 200_000); } catch {}
+  // Counts per option relative to other active filters (excluding the axis itself).
+  function countFor<K extends keyof typeof filters>(axis: K, value: string): number {
+    const rest = { ...filters, [axis]: [] } as typeof filters;
+    return applyFilters(allEvidence, rest).filter((d) => {
+      switch (axis) {
+        case "sources": return d.source === value;
+        case "authorities": return d.authority === value;
+        case "purposes": return d.purpose === value;
+        case "types": return d.type === value;
+        case "regions": return d.region === value;
+        case "topics": return d.topic?.includes(value) ?? false;
+        case "vendors": return d.vendor === value;
+        default: return false;
       }
-      const doc: EvidenceDocument = {
-        id, title: f.name, source: "Uploaded", type: guessType(f.name),
-        authority: "External intelligence", purpose: "user-supplied",
-        status: body ? "Ready" : "Uploaded / Intake Complete",
-        included: true, uploadedAt: now, body,
-      };
-      dispatch({ type: "addDocument", doc });
-      audit(`Uploaded "${f.name}"${body ? " (text extracted client-side)" : " (intake only — deep extraction requires document intelligence pipeline)"}`, "Uploaded Document");
+    }).length;
+  }
+
+  function toggleArrayFilter<K extends keyof typeof filters>(axis: K, value: string) {
+    const cur = filters[axis] as string[];
+    const next = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
+    setFilters({ [axis]: next } as any);
+  }
+  function clearAll() {
+    setFilters({ search: "", sources: [], authorities: [], purposes: [], types: [], regions: [], topics: [], vendors: [], dateFrom: undefined, dateTo: undefined });
+  }
+
+  const activeCount =
+    (filters.search ? 1 : 0) + filters.sources.length + filters.authorities.length +
+    filters.purposes.length + filters.types.length + filters.regions.length +
+    filters.topics.length + filters.vendors.length + (filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0);
+
+  // Extracted intelligence, grouped
+  const byAuthority = useMemo(() => {
+    const m = new Map<Authority, EvidenceDocument[]>();
+    includedEvidence.forEach((d) => {
+      const arr = m.get(d.authority) ?? [];
+      arr.push(d);
+      m.set(d.authority, arr);
     });
-  };
+    return AUTHORITY_ORDER.map((a) => [a, m.get(a) ?? []] as const).filter(([, v]) => v.length);
+  }, [includedEvidence]);
 
   return (
-    <div className="space-y-3">
-      {/* Sub-view toggle */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="inline-flex rounded-md border bg-card p-0.5">
-          <button onClick={() => setView("set")} className={`text-xs px-3 py-1.5 rounded ${view === "set" ? "bg-accent2 text-white" : "text-muted-foreground hover:text-foreground"}`}>Evidence Set</button>
-          <button onClick={() => setView("intel")} className={`text-xs px-3 py-1.5 rounded ${view === "intel" ? "bg-accent2 text-white" : "text-muted-foreground hover:text-foreground"}`}>Extracted Intelligence</button>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => fileRef.current?.click()} className="text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border bg-background hover:bg-muted">
-            <Upload className="h-3.5 w-3.5" /> Upload evidence
-          </button>
-          <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { onUpload(e.target.files); e.target.value = ""; }} />
-          {!state.evidenceSet.confirmed ? (
-            <button
-              onClick={() => { dispatch({ type: "confirmEvidence" }); audit(`Evidence Set confirmed (${includedDocs.length} docs).`, "Human"); }}
-              className="text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-accent2 text-white hover:opacity-90"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm evidence set
-            </button>
-          ) : (
-            <span className="text-[11px] rounded bg-emerald-100 text-emerald-800 px-2 py-1 inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Evidence confirmed</span>
-          )}
-        </div>
-      </div>
+    <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4">
+      {/* Left: filters + summary */}
+      <aside className="space-y-3">
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold"><Filter className="h-3.5 w-3.5" /> Cascading filters
+            {activeCount > 0 && <button onClick={clearAll} className="ml-auto text-[11px] text-muted-foreground hover:text-foreground">Clear all ({activeCount})</button>}
+          </div>
+          <div className="relative">
+            <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={filters.search} onChange={(e) => setFilters({ search: e.target.value })} placeholder="Search evidence…" className="pl-7 h-8 text-xs" />
+          </div>
 
-      {view === "set" ? (
-        <div className="grid grid-cols-12 gap-3">
-          {/* Filter rail */}
-          <aside className="col-span-12 lg:col-span-3 rounded-xl border bg-card p-3 space-y-3 text-[11px]">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Filter className="h-3 w-3" /> Filters</div>
-            <div className="relative">
-              <Search className="h-3 w-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={filters.search} onChange={(e) => dispatch({ type: "setFilters", filters: { search: e.target.value } })} placeholder="Search…" className="w-full pl-7 pr-2 py-1.5 rounded border bg-background text-[11px]" />
-            </div>
-
-            <FilterGroup label="Source" options={["Seeded", "Uploaded", "External"] as const} selected={filters.sources} onToggle={(v) => dispatch({ type: "setFilters", filters: { sources: toggleMulti(filters.sources, v) as typeof filters.sources } })} />
-            <FilterGroup label="Authority" options={ALL_AUTHORITIES} selected={filters.authorities} onToggle={(v) => dispatch({ type: "setFilters", filters: { authorities: toggleMulti(filters.authorities, v) } })} />
-            <FilterGroup label="Type" options={ALL_TYPES} selected={filters.types} onToggle={(v) => dispatch({ type: "setFilters", filters: { types: toggleMulti(filters.types, v) } })} compact />
-
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Vendor</div>
-              <input value={filters.vendors.join(", ")} onChange={(e) => dispatch({ type: "setFilters", filters: { vendors: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) } })} className="w-full px-2 py-1 rounded border bg-background text-[11px]" placeholder="Any" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Region</div>
-              <input value={filters.regions.join(", ")} onChange={(e) => dispatch({ type: "setFilters", filters: { regions: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) } })} className="w-full px-2 py-1 rounded border bg-background text-[11px]" placeholder="Any" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Topic</div>
-              <input value={filters.topics.join(", ")} onChange={(e) => dispatch({ type: "setFilters", filters: { topics: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) } })} className="w-full px-2 py-1 rounded border bg-background text-[11px]" placeholder="Any" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Date range</div>
-              <div className="flex gap-1">
-                <input type="date" value={filters.dateFrom ?? ""} onChange={(e) => dispatch({ type: "setFilters", filters: { dateFrom: e.target.value } })} className="flex-1 px-1.5 py-1 rounded border bg-background text-[11px]" />
-                <input type="date" value={filters.dateTo ?? ""} onChange={(e) => dispatch({ type: "setFilters", filters: { dateTo: e.target.value } })} className="flex-1 px-1.5 py-1 rounded border bg-background text-[11px]" />
-              </div>
-            </div>
-            <button
-              onClick={() => dispatch({ type: "setFilters", filters: { search: "", sources: ["Seeded","Uploaded","External"], authorities: [], purposes: [], types: [], regions: [], topics: [], vendors: [], dateFrom: undefined, dateTo: undefined } })}
-              className="text-[10px] text-accent2 hover:underline"
-            >Clear all filters</button>
-          </aside>
-
-          {/* Doc list */}
-          <div className="col-span-12 lg:col-span-9 rounded-xl border bg-card">
-            <div className="px-3 py-2 border-b text-xs font-semibold flex items-center justify-between">
-              <span>Evidence Set · {filteredDocs.length} docs · {includedDocs.length} included</span>
-              <span className="text-[10px] text-muted-foreground">Coverage {summary.coverage}%</span>
-            </div>
-            <div className="divide-y">
-              {filteredDocs.map((d) => (
-                <div key={d.id} className="p-3 flex items-start gap-3 hover:bg-muted/30">
-                  <input type="checkbox" checked={d.included} onChange={() => dispatch({ type: "toggleInclude", docId: d.id })} className="mt-1" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium">{d.title}</span>
-                      <span className={`text-[9px] px-1 py-0.5 rounded ${d.source === "Seeded" ? "bg-slate-100 text-slate-700" : "bg-accent2/15 text-accent2"}`}>{d.source}</span>
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-slate-100 text-slate-700">{d.type}</span>
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-indigo-100 text-indigo-800">{d.authority}</span>
-                      <span className="text-[9px] text-muted-foreground">{d.purpose}</span>
-                    </div>
-                    {d.body && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{d.body}</p>}
-                    <div className="text-[10px] text-muted-foreground mt-1 flex gap-2 flex-wrap">
-                      {d.vendor && <span>Vendor: {d.vendor}</span>}
-                      {d.region && <span>Region: {d.region}</span>}
-                      {d.date && <span>Date: {d.date}</span>}
-                      {(d.topic ?? []).map((t) => <span key={t} className="rounded bg-muted px-1">{t}</span>)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!filteredDocs.length && <div className="p-6 text-xs text-muted-foreground text-center">No documents match current filters.</div>}
+          <FilterGroup label="Source" opts={opts.sources} active={filters.sources} onToggle={(v) => toggleArrayFilter("sources", v)} count={(v) => countFor("sources", v)} />
+          <FilterGroup label="Authority" opts={opts.authorities} active={filters.authorities} onToggle={(v) => toggleArrayFilter("authorities", v)} count={(v) => countFor("authorities", v)} />
+          <FilterGroup label="Purpose" opts={opts.purposes} active={filters.purposes} onToggle={(v) => toggleArrayFilter("purposes", v)} count={(v) => countFor("purposes", v)} />
+          <FilterGroup label="Type" opts={opts.types} active={filters.types} onToggle={(v) => toggleArrayFilter("types", v)} count={(v) => countFor("types", v)} />
+          <FilterGroup label="Region" opts={opts.regions} active={filters.regions} onToggle={(v) => toggleArrayFilter("regions", v)} count={(v) => countFor("regions", v)} />
+          <FilterGroup label="Topic" opts={opts.topics} active={filters.topics} onToggle={(v) => toggleArrayFilter("topics", v)} count={(v) => countFor("topics", v)} />
+          <FilterGroup label="Vendor" opts={opts.vendors} active={filters.vendors} onToggle={(v) => toggleArrayFilter("vendors", v)} count={(v) => countFor("vendors", v)} />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Date range</div>
+            <div className="flex gap-2">
+              <Input type="date" value={filters.dateFrom ?? ""} onChange={(e) => setFilters({ dateFrom: e.target.value || undefined })} className="h-7 text-[11px] px-2" />
+              <Input type="date" value={filters.dateTo ?? ""} onChange={(e) => setFilters({ dateTo: e.target.value || undefined })} className="h-7 text-[11px] px-2" />
             </div>
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <IntelCard title="Coverage" tone="ok" icon={<ShieldCheck className="h-4 w-4" />}>
-            <div className="text-2xl font-semibold">{summary.coverage}%</div>
-            <p className="text-[11px] text-muted-foreground">Included evidence coverage across expected artifact types.</p>
-          </IntelCard>
-          <IntelCard title="Gaps" tone="warn" icon={<AlertTriangle className="h-4 w-4" />}>
-            {summary.gaps.length ? <ul className="text-[11px] space-y-1 list-disc pl-4">{summary.gaps.map((g) => <li key={g}>{g}</li>)}</ul> : <p className="text-[11px] text-muted-foreground">No gaps detected.</p>}
-          </IntelCard>
-          <IntelCard title="Conflicts" tone="danger" icon={<AlertTriangle className="h-4 w-4" />}>
-            {summary.conflicts.length ? <ul className="text-[11px] space-y-1 list-disc pl-4">{summary.conflicts.map((g) => <li key={g}>{g}</li>)}</ul> : <p className="text-[11px] text-muted-foreground">No conflicts detected.</p>}
-          </IntelCard>
+
+        <div className="rounded-xl border bg-card p-4 space-y-2">
+          <div className="text-xs font-semibold flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-accent2" /> Evidence Set Summary</div>
+          <div className="text-[11px] text-muted-foreground">{includedEvidence.length} of {allEvidence.length} sources included · {filtered.length} match current filters</div>
+          {state.evidenceSet.summary && (
+            <div className="space-y-1.5 pt-1">
+              <StatBar label="Artifact coverage" value={state.evidenceSet.summary.artifactCoverage} />
+              <StatBar label="Draft readiness" value={state.evidenceSet.summary.draftReadiness} tone="accent" />
+              {state.evidenceSet.summary.gaps.map((g) => <div key={g} className="text-[11px] text-amber-600 dark:text-amber-400">Gap: {g}</div>)}
+              {state.evidenceSet.summary.conflicts.map((c) => <div key={c} className="text-[11px] text-rose-600 dark:text-rose-400">Conflict: {c}</div>)}
+            </div>
+          )}
+          <Button size="sm" className="w-full" onClick={confirmEvidenceSet}>{state.evidenceSet.confirmed ? "Recalculate readiness" : "Confirm Evidence Set"}</Button>
         </div>
-      )}
+      </aside>
+
+      {/* Right: two-column list + extracted intelligence */}
+      <div className="space-y-4 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-semibold">Evidence sources</div>
+          <span className="text-xs text-muted-foreground">{filtered.length} shown</span>
+          <div className="ml-auto flex gap-2">
+            {selection.length > 0 && (
+              <>
+                <Button size="sm" variant="outline" onClick={() => { setIncludeMany(selection, true); setSelection([]); }}>Include selected ({selection.length})</Button>
+                <Button size="sm" variant="outline" onClick={() => { setIncludeMany(selection, false); setSelection([]); }}>Exclude selected</Button>
+              </>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setUploadOpen(true)} className="gap-1"><Upload className="h-3.5 w-3.5" /> Upload</Button>
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="rounded-xl border bg-muted/30 p-8 text-center text-sm text-muted-foreground">No evidence matches. Adjust filters or clear all.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {filtered.map((d) => (
+              <label key={d.id} className={`rounded-lg border p-3 text-sm cursor-pointer transition ${d.included ? "bg-card border-accent2/30" : "bg-muted/20 border-border"}`}>
+                <div className="flex items-start gap-2">
+                  <input type="checkbox" checked={selection.includes(d.id)} onChange={(e) => setSelection((s) => e.target.checked ? [...s, d.id] : s.filter((x) => x !== d.id))} className="mt-1" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-medium leading-tight truncate">{d.title}</div>
+                      <button onClick={(e) => { e.preventDefault(); toggleInclude(d.id); }} className={`text-[10px] rounded px-1.5 py-0.5 border ${d.included ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400" : "border-border text-muted-foreground"}`}>{d.included ? "Included" : "Excluded"}</button>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                      <span className={`rounded-full border px-1.5 py-0.5 ${authorityColor[d.authority]}`}>{d.authority}</span>
+                      <span>· {d.type}</span>
+                      {d.vendor && <span>· {d.vendor}</span>}
+                      {d.region && <span>· {d.region}</span>}
+                      {d.date && <span>· {d.date}</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{d.body}</div>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="text-sm font-semibold">Extracted intelligence · grouped by authority</div>
+          {byAuthority.length === 0 && <div className="text-xs text-muted-foreground">Include at least one source above to extract intelligence.</div>}
+          {byAuthority.map(([auth, docs]) => (
+            <div key={auth}>
+              <div className={`inline-block text-[11px] rounded-full border px-2 py-0.5 mb-1.5 ${authorityColor[auth]}`}>{auth} · {docs.length}</div>
+              <ul className="text-xs space-y-1 pl-1">
+                {docs.map((d) => (
+                  <li key={d.id} className="flex items-start gap-2"><ChevronRight className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" /><span><span className="font-medium">{d.title}</span> — <span className="text-muted-foreground">{d.body?.slice(0, 140) ?? d.purpose}</span></span></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {uploadOpen && <UploadDrawer onClose={() => setUploadOpen(false)} onUpload={(doc) => { uploadEvidence(doc); setUploadOpen(false); }} />}
     </div>
   );
 }
 
-function FilterGroup<T extends string>({ label, options, selected, onToggle, compact }: { label: string; options: readonly T[]; selected: T[]; onToggle: (v: T) => void; compact?: boolean }) {
+function FilterGroup({ label, opts, active, onToggle, count }: { label: string; opts: string[]; active: string[]; onToggle: (v: string) => void; count: (v: string) => number }) {
+  if (!opts.length) return null;
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</div>
-      <div className={`flex flex-wrap gap-1 ${compact ? "max-h-24 overflow-auto" : ""}`}>
-        {options.map((o) => {
-          const on = selected.includes(o);
-          return (
-            <button key={o} onClick={() => onToggle(o)} className={`text-[10px] px-1.5 py-0.5 rounded border ${on ? "bg-accent2 text-white border-accent2" : "bg-background hover:bg-muted"}`}>{o}</button>
-          );
+      <div className="flex flex-wrap gap-1">
+        {opts.map((v) => {
+          const c = count(v);
+          return <Chip key={v} active={active.includes(v)} onClick={() => onToggle(v)} label={v} count={c} className={c === 0 && !active.includes(v) ? "opacity-40" : ""} />;
         })}
       </div>
     </div>
   );
 }
-function IntelCard({ title, tone, icon, children }: { title: string; tone: "ok" | "warn" | "danger"; icon: React.ReactNode; children: React.ReactNode }) {
-  const cls = tone === "ok" ? "border-emerald-200 bg-emerald-50" : tone === "warn" ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50";
+
+function StatBar({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "accent" }) {
   return (
-    <div className={`rounded-xl border p-3 ${cls}`}>
-      <div className="flex items-center gap-1.5 text-xs font-semibold">{icon}{title}</div>
-      <div className="mt-2">{children}</div>
+    <div>
+      <div className="flex items-center justify-between text-[11px] mb-0.5"><span className="text-muted-foreground">{label}</span><span className="font-medium">{value}%</span></div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full ${tone === "accent" ? "bg-accent2" : "bg-primary"}`} style={{ width: `${value}%` }} /></div>
     </div>
   );
 }
 
-function guessType(name: string): DocType {
-  const n = name.toLowerCase();
-  if (n.includes("redline")) return "Redline";
-  if (n.includes("invoice")) return "Invoice";
-  if (n.includes("rate")) return "RateCard";
-  if (n.includes("sla")) return "SLA";
-  if (n.includes("sow")) return "SOW";
-  if (n.includes("insurance") || n.includes("coi")) return "Insurance";
-  return "Contract";
+function UploadDrawer({ onClose, onUpload }: { onClose: () => void; onUpload: (doc: Omit<EvidenceDocument, "included" | "source" | "status">) => void }) {
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState<DocType>("SOW");
+  const [authority, setAuthority] = useState<Authority>("Prior drafting reference");
+  const [purpose, setPurpose] = useState("drafting-basis");
+  const [vendor, setVendor] = useState("");
+  const [region, setRegion] = useState("");
+  const [body, setBody] = useState("");
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-background border rounded-xl w-full max-w-lg p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between"><div className="text-sm font-semibold">Upload evidence</div><button onClick={onClose}><X className="h-4 w-4" /></button></div>
+        <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <div className="grid grid-cols-2 gap-2">
+          <select className="rounded border bg-card px-2 py-1 text-xs" value={type} onChange={(e) => setType(e.target.value as DocType)}>
+            {["SOW","Contract","Redline","RateCard","Invoice","SLA","ServiceReport","ChangeOrder","Certification","Insurance","Safety","ClauseLibrary","VendorProposal","Benchmark"].map((t) => <option key={t}>{t}</option>)}
+          </select>
+          <select className="rounded border bg-card px-2 py-1 text-xs" value={authority} onChange={(e) => setAuthority(e.target.value as Authority)}>
+            {AUTHORITY_ORDER.map((a) => <option key={a}>{a}</option>)}
+          </select>
+          <Input placeholder="Purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+          <Input placeholder="Vendor (optional)" value={vendor} onChange={(e) => setVendor(e.target.value)} />
+          <Input placeholder="Region (optional)" value={region} onChange={(e) => setRegion(e.target.value)} />
+        </div>
+        <textarea className="w-full rounded border bg-card p-2 text-xs h-24" placeholder="Description / body" value={body} onChange={(e) => setBody(e.target.value)} />
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={() => onUpload({ id: `up-${Date.now()}`, title: title || "Untitled evidence", type, authority, purpose, vendor: vendor || undefined, region: region || undefined, body, date: new Date().toISOString().slice(0, 10) })}><Check className="h-3.5 w-3.5 mr-1" /> Upload</Button>
+        </div>
+      </div>
+    </div>
+  );
 }
