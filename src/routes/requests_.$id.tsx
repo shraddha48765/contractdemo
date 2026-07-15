@@ -8,8 +8,8 @@ import { SourceChip } from "@/components/SourceChip";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles, Users, Download } from "lucide-react";
 import { WorkspaceProvider } from "@/lib/workspace/WorkspaceProvider";
-import { EvidenceIntelligence } from "./workspace/EvidenceIntelligence";
-import { SowStudio } from "./workspace/SowStudio";
+import { EvidenceIntelligence } from "@/components/workspace/EvidenceIntelligence";
+import { SowStudio } from "@/components/workspace/SowStudio";
 
 export const Route = createFileRoute("/requests_/$id")({
   head: () => ({ meta: [{ title: "Industrial Maintenance Services SOW — Active Request" }] }),
