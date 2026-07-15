@@ -1,4 +1,4 @@
-// Shared workspace data model (plan v3 §4-§10)
+// Shared workspace data model (plan v3 §4-§10, plus repair patch)
 
 export type Authority =
   | "Authoritative"
@@ -43,15 +43,15 @@ export interface EvidenceDocument {
   region?: string;
   topic?: string[];
   vendor?: string;
-  date?: string; // ISO or free-text
+  date?: string; // ISO
   authority: Authority;
-  purpose: string; // e.g. "drafting-basis", "redline-source", "benchmark"
+  purpose: string;
   status: DocStatus;
   body?: string;
   sections?: { heading: string; text: string }[];
-  providerRef?: string; // opaque server-side id (Abacus etc.)
-  storageRef?: string;  // optional protected storage path
-  included: boolean;    // explicit include/exclude override
+  providerRef?: string;
+  storageRef?: string;
+  included: boolean;
   uploadedAt?: string;
 }
 
@@ -75,11 +75,11 @@ export interface EvidenceSet {
   updatedAt: string;
   documentIds: string[];
   filters: EvidenceFilters;
-  summary?: { coverage: number; gaps: string[]; conflicts: string[] };
+  summary?: { artifactCoverage: number; draftReadiness: number; gaps: string[]; conflicts: string[] };
   confirmed: boolean;
 }
 
-// --- Templates & packs (plan v3 §8) ---
+// --- Templates & packs ---
 
 export interface TemplateSection {
   id: string;
@@ -109,13 +109,14 @@ export type SectionStatus =
   | "review"
   | "accepted"
   | "conflict"
-  | "edited";
+  | "edited"
+  | "assigned-review";
 
 export interface SectionRevision {
   id: string;
   ts: string;
   actor: string;
-  kind: "content" | "structural" | "status";
+  kind: "content" | "structural" | "status" | "suggestion";
   summary: string;
   before?: string;
   after?: string;
@@ -143,7 +144,8 @@ export interface SuggestedChange {
   governance: SuggestionGovernance;
   kind: "insert" | "delete" | "replace";
   before?: string;
-  after: string;
+  proposedText: string;          // AI's original proposal (immutable once created)
+  editedProposedText?: string;   // user's edit of the proposal (for Modify)
   why: string;
   sourceEvidenceIds: string[];
   status: "pending" | "accepted" | "rejected" | "modified";
@@ -159,7 +161,8 @@ export interface DraftSection {
   packId?: string;
   required: boolean;
   status: SectionStatus;
-  body: string;
+  originalText: string;   // first generated body, immutable
+  currentBody: string;    // what the document currently shows
   suggestions: SuggestedChange[];
   sourceEvidenceIds: string[];
   history: SectionRevision[];
@@ -175,7 +178,9 @@ export type DraftStatus =
   | "UnsavedChanges"
   | "Saved"
   | "Submitted"
-  | "Approved";
+  | "InReview"
+  | "Approved"
+  | "IssuedToVendor";
 
 export interface DraftMetadata {
   revision: string;
@@ -196,6 +201,8 @@ export interface DraftMetadata {
   classificationLevel?: string;
   createdAt: string;
   updatedAt: string;
+  issuedTo?: string;
+  issuedAt?: string;
 }
 
 export interface DraftDocument {
@@ -212,26 +219,17 @@ export interface DraftDocument {
   updatedAt: string;
 }
 
-// --- Collaboration & governance (plan v3 §4-§6) ---
+// --- Collaboration ---
 
 export type CollaboratorAccess = "view" | "comment" | "edit";
 export interface Collaborator {
-  id: string;
-  name: string;
-  email?: string;
-  role: string;
-  access: CollaboratorAccess;
-  addedBy: string;
-  addedAt: string;
+  id: string; name: string; email?: string; role: string;
+  access: CollaboratorAccess; addedBy: string; addedAt: string;
 }
 export interface CollaboratorAuditEvent {
-  id: string;
-  ts: string;
-  actor: string;
+  id: string; ts: string; actor: string;
   action: "added" | "removed" | "access-changed";
-  target: string;
-  from?: CollaboratorAccess;
-  to?: CollaboratorAccess;
+  target: string; from?: CollaboratorAccess; to?: CollaboratorAccess;
 }
 
 export interface Comment {
@@ -250,56 +248,53 @@ export interface Comment {
   updatedAt?: string;
 }
 
+export type ReviewScope = "current-section" | "selected-sections" | "entire-document";
 export interface ReviewerAssignment {
   id: string;
-  sectionId?: string;
+  scope: ReviewScope;
+  sectionIds: string[];
   reviewer: string;
   state: "assigned" | "in-review" | "changes-requested" | "completed";
   assignedBy: string;
   assignedAt: string;
+  dueDate?: string;
   completedAt?: string;
   notes?: string;
 }
 
 export type ApproverRole = "Legal" | "Finance" | "Procurement" | "Signatory" | "Business SME";
 export interface ApproverAssignment {
-  id: string;
-  role: ApproverRole;
-  approver: string;
-  scope: "document" | "section";
-  sectionId?: string;
-  requiredOrder?: number;
+  id: string; role: ApproverRole; approver: string;
+  scope: "document" | "section"; sectionId?: string; requiredOrder?: number;
 }
 export interface ApprovalRecord {
-  id: string;
-  assignmentId: string;
+  id: string; assignmentId: string;
   decision: "approved" | "rejected" | "changes-requested";
-  approver: string;
-  role: ApproverRole;
-  decidedAt: string;
-  comment?: string;
-  documentVersionId: string;
-  signatureRef?: string;
+  approver: string; role: ApproverRole; decidedAt: string;
+  comment?: string; documentVersionId: string; signatureRef?: string;
+  invalidated?: boolean; invalidatedReason?: string;
 }
 
 export interface DocumentVersion {
   id: string;
-  version: number;
+  version: number;      // integer major
+  minor: number;        // minor bump per save
+  label: string;        // "Generated Draft v0.1" etc.
   ts: string;
-  label: string;
+  createdBy: string;
+  summary: string;
+  status: DraftStatus;
+  immutable: boolean;   // true for Issued v1.0+
   snapshot: DraftDocument;
 }
 
 export interface AuditEvent {
-  id: string;
-  ts: string;
-  actor: string;
+  id: string; ts: string; actor: string;
   source: "Human" | "AI" | "System" | "Uploaded Document" | "Seeded Evidence";
-  text: string;
-  refId?: string;
+  text: string; refId?: string;
 }
 
-// --- Workspace root state ---
+// --- Workspace root ---
 
 export interface WorkspaceState {
   requestId: string;
@@ -315,6 +310,5 @@ export interface WorkspaceState {
   versions: DocumentVersion[];
   audit: AuditEvent[];
   provider: "mock" | "abacus";
-  focusMode: boolean;
   railMode: "evidence" | "outline";
 }

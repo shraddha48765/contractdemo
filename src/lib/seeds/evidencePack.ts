@@ -1,22 +1,12 @@
 import type { EvidenceDocument } from "@/lib/workspace/types";
 
-// Seeded demo evidence pack per plan v3.
-// Every doc carries id, title, source, type, region, topic, vendor, date,
-// authority, purpose, status, body.
-
 export const seedEvidenceDocs: EvidenceDocument[] = [
-  // --- 5 prior SOWs ---
   {
     id: "sow-apex-2023", title: "Apex Industrial Maintenance SOW 2023", source: "Seeded",
     type: "SOW", region: "US Gulf Coast", topic: ["Maintenance", "Multi-site"],
     vendor: "Apex Industrial Services", date: "2023-01-15", authority: "Prior drafting reference",
     purpose: "drafting-basis", status: "Applied", included: true,
     body: "3-year Industrial Maintenance SOW covering 6 sites. Response SLA: 4 hours 24x7 for critical assets. Rate escalation: 3% annual CPI-linked. Service credits: 1.5% for missed monthly targets.",
-    sections: [
-      { heading: "Scope of Work", text: "Preventive and corrective maintenance across 6 sites." },
-      { heading: "SLA", text: "4-hour 24x7 emergency response measured from ticket acknowledgement." },
-      { heading: "Rate Card", text: "Governed by Exhibit B; escalation capped at 3% CPI." },
-    ],
   },
   {
     id: "sow-northstar-2022", title: "Northstar Maintenance SOW 2022", source: "Seeded",
@@ -46,33 +36,36 @@ export const seedEvidenceDocs: EvidenceDocument[] = [
     status: "Ready", included: true,
     body: "Emergency generator maintenance with quarterly PM cycle and 2-hour response.",
   },
-  // --- Vendor proposal + redline ---
   {
     id: "apex-proposal-2026", title: "Apex Renewal Proposal 2026", source: "Seeded",
     type: "VendorProposal", region: "US Gulf Coast", topic: ["Maintenance", "Renewal"],
     vendor: "Apex Industrial Services", date: "2025-11-01", authority: "Commercial evidence",
-    purpose: "commercial", status: "Ready", included: true,
+    purpose: "vendor-proposal", status: "Ready", included: true,
     body: "Renewal proposal: labor +4.2% YoY, response SLA proposed at 6 hours (was 4), no service credits.",
   },
   {
+    // CORRECTED: redline is a prior drafting reference, purpose is redline-source
     id: "apex-redline-v3", title: "Apex Redline v3 (2026 Renewal)", source: "Seeded",
     type: "Redline", region: "US Gulf Coast", topic: ["Maintenance"], vendor: "Apex Industrial Services",
-    date: "2025-12-05", authority: "Commercial evidence", purpose: "redline-source",
+    date: "2025-12-05", authority: "Prior drafting reference", purpose: "redline-source",
     status: "Needs Review", included: true,
     body: "Vendor redline weakening emergency SLA from 4h 24x7 to 8h business hours; removes service-credit clause; raises handling cap to 12%.",
-    sections: [
-      { heading: "SLA", text: "Supplier shall respond within eight (8) business hours." },
-      { heading: "Service Credits", text: "[Removed]" },
-      { heading: "Handling", text: "Materials at cost plus 12% handling." },
-    ],
   },
-  // --- Commercial refs ---
   {
-    id: "apex-rate-card-v2", title: "Apex Rate Card v2", source: "Seeded",
+    // CORRECTED: current approved rate card stays Authoritative
+    id: "apex-rate-card-v2", title: "Apex Rate Card v2 (Approved, Current)", source: "Seeded",
     type: "RateCard", region: "US Gulf Coast", topic: ["Pricing"], vendor: "Apex Industrial Services",
     date: "2025-10-01", authority: "Authoritative", purpose: "rate-reference",
     status: "Applied", included: true,
     body: "Approved labor rates by discipline. Escalation cap 3% CPI-linked.",
+  },
+  {
+    // Older/superseded rate card — commercial evidence only
+    id: "apex-rate-card-v1", title: "Apex Rate Card v1 (Superseded 2024)", source: "Seeded",
+    type: "RateCard", region: "US Gulf Coast", topic: ["Pricing"], vendor: "Apex Industrial Services",
+    date: "2024-01-01", authority: "Commercial evidence", purpose: "historical-rate",
+    status: "Ready", included: false,
+    body: "Prior labor rate card, superseded by v2.",
   },
   {
     id: "wage-schedule-2026", title: "Prevailing Wage Schedule 2026", source: "Seeded",
@@ -89,20 +82,20 @@ export const seedEvidenceDocs: EvidenceDocument[] = [
     body: "2024 PO volume $2.28M across 6 sites; 42 emergency callouts.",
   },
   {
+    // CORRECTED: invoice is Commercial evidence, purpose invoice-validation
     id: "invoice-1842", title: "Invoice INV-1842", source: "Seeded",
     type: "Invoice", region: "US Gulf Coast", topic: ["Billing"], vendor: "Apex Industrial Services",
-    date: "2025-08-14", authority: "Operational evidence", purpose: "leakage-evidence",
+    date: "2025-08-14", authority: "Commercial evidence", purpose: "invoice-validation",
     status: "Needs Review", included: true,
     body: "Invoice showing materials handling at 14% (over approved 8%). Rate mismatch on 3 line items totaling $12,480 exposure.",
   },
   {
     id: "invoice-1901", title: "Invoice INV-1901", source: "Seeded",
     type: "Invoice", region: "US Gulf Coast", topic: ["Billing"], vendor: "Apex Industrial Services",
-    date: "2025-10-02", authority: "Operational evidence", purpose: "leakage-evidence",
+    date: "2025-10-02", authority: "Commercial evidence", purpose: "invoice-validation",
     status: "Ready", included: true,
     body: "Invoice within tolerance; used as comparison baseline.",
   },
-  // --- Operational ---
   {
     id: "sla-log-2025", title: "SLA Service Log 2025", source: "Seeded",
     type: "SLA", region: "US Gulf Coast", topic: ["SLA", "Performance"],
@@ -124,7 +117,6 @@ export const seedEvidenceDocs: EvidenceDocument[] = [
     purpose: "gap-evidence", status: "Applied", included: true,
     body: "Weekend coverage added mid-term via CO at premium rate — recurring pattern across 2023 and 2024.",
   },
-  // --- Governance ---
   {
     id: "clause-library", title: "Approved Clause Library", source: "Seeded",
     type: "ClauseLibrary", topic: ["Clauses"], date: "2025-06-01",
@@ -140,6 +132,7 @@ export const seedEvidenceDocs: EvidenceDocument[] = [
   {
     id: "apex-insurance", title: "Apex Insurance Certificate", source: "Seeded",
     type: "Insurance", topic: ["Compliance"], vendor: "Apex Industrial Services",
+    region: "US Gulf Coast",
     date: "2025-01-01", authority: "Compliance evidence", purpose: "compliance",
     status: "Ready", included: true,
     body: "COI with $5M general liability, workers' comp per statute, additional insured endorsement.",
@@ -147,6 +140,7 @@ export const seedEvidenceDocs: EvidenceDocument[] = [
   {
     id: "tech-roster", title: "Technician Certification Roster", source: "Seeded",
     type: "Certification", topic: ["Compliance"], vendor: "Apex Industrial Services",
+    region: "US Gulf Coast",
     date: "2025-11-01", authority: "Compliance evidence", purpose: "compliance",
     status: "Ready", included: true,
     body: "42 assigned technicians; OSHA 30 current on 40; 2 pending renewal.",
