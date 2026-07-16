@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useWorkspace } from "@/lib/workspace/WorkspaceProvider";
 import { industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
 import { exportDocx, exportEvidencePackZip } from "@/lib/workspace/exports";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   Sparkles, FileText, MessageSquareText, Users, Download, Printer, Send, Save,
   ChevronUp, ChevronDown, Trash2, Plus, RefreshCw, Check, X, History, Settings2, ListTree,
+  Maximize2, Minimize2, RotateCcw,
 } from "lucide-react";
 
 type Drawer = null | "ai" | "history" | "comments" | "collab" | "review" | "meta";
@@ -22,13 +23,43 @@ export function SowStudio() {
   const draft = state.draft;
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<Drawer>(null);
+  const [templateId, setTemplateId] = useState<string>(industrialMaintenanceTemplate.id);
   const [packIds, setPackIds] = useState<string[]>(sectionPacks.map((p) => p.id));
   const [toast, setToast] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const flash = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
 
   const sortedSections = useMemo(() => draft ? [...draft.sections].sort((a, b) => a.order - b.order) : [], [draft]);
   const activeSection = draft && (selectedSectionId ? sortedSections.find((s) => s.id === selectedSectionId) : sortedSections[0]) || null;
+
+  // Outline click: scroll into view + brief highlight
+  useEffect(() => {
+    if (!selectedSectionId) return;
+    const el = sectionRefs.current[selectedSectionId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setHighlightId(selectedSectionId);
+      const t = setTimeout(() => setHighlightId(null), 1400);
+      return () => clearTimeout(t);
+    }
+  }, [selectedSectionId]);
+
+  // Available "+ Add Section" items — template + pack sections not already present, plus Custom
+  const addableSections = useMemo(() => {
+    if (!draft) return [] as { id: string; label: string; group: string }[];
+    const present = new Set(draft.sections.map((s) => s.id));
+    const tpl = industrialMaintenanceTemplate.baseSections
+      .filter((s) => !present.has(s.id))
+      .map((s) => ({ id: s.id, label: s.label, group: "Template" }));
+    const pk = sectionPacks.flatMap((p) => p.sections
+      .filter((s) => !present.has(s.id))
+      .map((s) => ({ id: s.id, label: s.label, group: p.name })));
+    return [...tpl, ...pk];
+  }, [draft]);
 
   // ---- Empty state ----
   if (!draft) {
@@ -37,15 +68,20 @@ export function SowStudio() {
         <FileText className="h-10 w-10 mx-auto text-accent2" />
         <div className="text-lg font-semibold">SOW Draft Studio</div>
         <p className="text-sm text-muted-foreground">Confirm your evidence set on the Evidence & Intelligence tab, then generate a first draft here. Sections are grounded in the sources you include and appear progressively as they generate.</p>
-        <div className="text-left rounded-lg border bg-muted/30 p-3 space-y-2">
-          <div className="text-xs font-semibold">Template & section packs</div>
-          <div className="text-xs text-muted-foreground">{industrialMaintenanceTemplate.name} — {industrialMaintenanceTemplate.baseSections.length} base sections</div>
-          {sectionPacks.map((p) => (
-            <label key={p.id} className="flex items-start gap-2 text-xs">
-              <input type="checkbox" checked={packIds.includes(p.id)} onChange={(e) => setPackIds((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))} className="mt-0.5" />
-              <span><span className="font-medium">{p.name}</span> — <span className="text-muted-foreground">{p.description}</span></span>
-            </label>
-          ))}
+        <div className="text-left rounded-lg border bg-muted/30 p-3 space-y-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Base template</div>
+            <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="w-full h-8 rounded border bg-card text-xs px-2">
+              <option value={industrialMaintenanceTemplate.id}>{industrialMaintenanceTemplate.name} — {industrialMaintenanceTemplate.baseSections.length} sections</option>
+            </select>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Section packs</div>
+            <select multiple value={packIds} onChange={(e) => setPackIds(Array.from(e.target.selectedOptions).map((o) => o.value))} className="w-full min-h-[64px] rounded border bg-card text-xs px-2 py-1">
+              {sectionPacks.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <div className="text-[10px] text-muted-foreground mt-1">Hold ⌘/Ctrl to select multiple.</div>
+          </div>
         </div>
         <Button className="gap-1.5" onClick={() => generateDraft({ packIds })} disabled={includedEvidence.length === 0}>
           <Sparkles className="h-4 w-4" /> Generate first draft {includedEvidence.length === 0 && "(include evidence first)"}
@@ -60,8 +96,9 @@ export function SowStudio() {
   const openComments = state.comments.filter((c) => c.state === "open").length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_320px] gap-3 min-h-[600px]">
+    <div className={`grid grid-cols-1 gap-3 min-h-[600px] ${focusMode ? "" : "lg:grid-cols-[240px_1fr_320px]"}`}>
       {/* LEFT: Rail — outline OR evidence */}
+      {!focusMode && (
       <aside className="rounded-xl border bg-card p-3 space-y-2 order-2 lg:order-1">
         <div className="flex gap-1">
           <button onClick={() => setRail("outline")} className={`flex-1 text-[11px] rounded px-2 py-1 border ${state.railMode === "outline" ? "bg-accent2 text-white border-accent2" : "border-border text-muted-foreground"}`}><ListTree className="h-3 w-3 inline mr-1" />Outline</button>
@@ -76,10 +113,29 @@ export function SowStudio() {
                   <span className="font-medium truncate">{s.label}</span>
                   <SectionStatusChip section={s} />
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{s.currentBody ? `${s.currentBody.length} chars` : "empty"} · {s.suggestions.filter((x) => x.status === "pending").length} AI</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                  <ProvenanceChip section={s} />
+                  <span>· {s.currentBody ? `${s.currentBody.length} chars` : "empty"} · {s.suggestions.filter((x) => x.status === "pending").length} AI</span>
+                </div>
               </button>
             ))}
-            <Button size="sm" variant="outline" className="w-full text-[11px] mt-2 h-7" onClick={() => { const label = prompt("Section title?"); if (label) addSection(label); }}><Plus className="h-3 w-3 mr-1" />Add section</Button>
+            <div className="relative">
+              <Button size="sm" variant="outline" className="w-full text-[11px] mt-2 h-7" onClick={() => setAddOpen((v) => !v)}><Plus className="h-3 w-3 mr-1" />Add section</Button>
+              {addOpen && (
+                <div className="absolute z-30 mt-1 left-0 right-0 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg text-xs">
+                  {addableSections.length === 0 && <div className="p-2 text-muted-foreground">All template & pack sections already added.</div>}
+                  {addableSections.map((s) => (
+                    <button key={s.id} onClick={() => { addSection(s.label); setAddOpen(false); flash(`Added section: ${s.label}`); }} className="w-full text-left px-2 py-1.5 hover:bg-muted flex items-center justify-between">
+                      <span>{s.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{s.group}</span>
+                    </button>
+                  ))}
+                  <div className="border-t">
+                    <button onClick={() => { const label = prompt("Custom section title?"); if (label) { addSection(label); flash(`Added custom section: ${label}`); } setAddOpen(false); }} className="w-full text-left px-2 py-1.5 hover:bg-muted italic text-muted-foreground">+ Custom section…</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-1 text-xs">
@@ -90,6 +146,7 @@ export function SowStudio() {
           </div>
         )}
       </aside>
+      )}
 
       {/* CENTER: Word-like document */}
       <section className="space-y-3 order-1 lg:order-2 min-w-0">
@@ -100,12 +157,23 @@ export function SowStudio() {
           <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5">{draft.status}</span>
           {draft.metadata.vendor && <span className="text-muted-foreground">· {draft.metadata.vendor}</span>}
           <div className="ml-auto flex gap-1">
+            <IconBtn onClick={() => setFocusMode((v) => !v)} title={focusMode ? "Exit focus mode" : "Enter focus mode"}>{focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}</IconBtn>
             <IconBtn onClick={() => { setDrawer("meta"); }} title="Document details"><Settings2 className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("history")} title="Version history"><History className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("comments")} title="Comments" badge={openComments || undefined}><MessageSquareText className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("collab")} title="Collaborators"><Users className="h-3.5 w-3.5" /></IconBtn>
+            <IconBtn onClick={() => {
+              if (confirm("Global reset: clear ALL demo workspace data across every request? This cannot be undone.")) {
+                try {
+                  const keys = Object.keys(localStorage).filter((k) => k.startsWith("workspace-v3-") || k.startsWith("demo-"));
+                  keys.forEach((k) => localStorage.removeItem(k));
+                } catch {}
+                window.location.reload();
+              }
+            }} title="Global reset — clear all demo data"><RotateCcw className="h-3.5 w-3.5" /></IconBtn>
           </div>
         </div>
+
 
         {/* Generation status */}
         {generating && (
@@ -126,6 +194,8 @@ export function SowStudio() {
             {sortedSections.map((s, idx) => (
               <SectionBlock key={s.id} section={s} idx={idx} total={sortedSections.length}
                 active={activeSection?.id === s.id}
+                highlight={highlightId === s.id}
+                registerRef={(el) => { sectionRefs.current[s.id] = el; }}
                 onFocus={() => setSelectedSectionId(s.id)}
                 onChange={(body) => editSectionBody(s.id, body)}
                 onMove={(dir) => reorderSection(s.id, dir)}
@@ -158,6 +228,7 @@ export function SowStudio() {
       </section>
 
       {/* RIGHT: contextual info */}
+      {!focusMode && (
       <aside className="rounded-xl border bg-card p-3 space-y-2 order-3 text-xs">
         <div className="font-semibold text-sm">Context</div>
         <div className="text-muted-foreground">{pendingCount} pending AI suggestions across draft</div>
@@ -167,6 +238,10 @@ export function SowStudio() {
           <div className="pt-2 border-t space-y-1.5">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Selected section</div>
             <div className="font-medium">{activeSection.label}</div>
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <ProvenanceChip section={activeSection} />
+              <SectionStatusChip section={activeSection} />
+            </div>
             <div className="flex gap-1 flex-wrap">
               <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDrawer("ai")}><Sparkles className="h-3 w-3 mr-1" />AI Review ({activeSection.suggestions.filter((x) => x.status === "pending").length})</Button>
               <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDrawer("history")}><History className="h-3 w-3 mr-1" />History</Button>
@@ -175,6 +250,7 @@ export function SowStudio() {
           </div>
         )}
       </aside>
+      )}
 
       {/* Drawers */}
       {drawer && <DrawerHost onClose={() => setDrawer(null)}>
@@ -209,11 +285,29 @@ function SectionStatusChip({ section }: { section: DraftSection }) {
   return <span className={`text-[9px] rounded-full px-1.5 py-0.5 ${map[section.status]}`}>{section.status}</span>;
 }
 
+function ProvenanceChip({ section }: { section: DraftSection }) {
+  const map: Record<DraftSection["origin"], { label: string; cls: string }> = {
+    template: { label: "Template", cls: "bg-slate-500/15 text-slate-700 dark:text-slate-300" },
+    pack: { label: "Pack", cls: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300" },
+    user: { label: "User", cls: "bg-teal-500/15 text-teal-700 dark:text-teal-300" },
+  };
+  const aiTouched = section.currentBody && section.currentBody === section.originalText;
+  const m = map[section.origin];
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`text-[9px] rounded-full px-1.5 py-0.5 ${m.cls}`}>{m.label}</span>
+      {aiTouched && <span className="text-[9px] rounded-full px-1.5 py-0.5 bg-blue-500/15 text-blue-700 dark:text-blue-300">AI-drafted</span>}
+    </span>
+  );
+}
+
 function SectionBlock({
-  section, idx, total, active, onFocus, onChange, onMove, onRemove,
+  section, idx, total, active, highlight, registerRef,
+  onFocus, onChange, onMove, onRemove,
   onAiReview, onRegenerate, onHistory, onComment, onSendForReview,
 }: {
   section: DraftSection; idx: number; total: number; active: boolean;
+  highlight: boolean; registerRef: (el: HTMLDivElement | null) => void;
   onFocus: () => void; onChange: (body: string) => void;
   onMove: (dir: "up" | "down") => void; onRemove: () => void;
   onAiReview: () => void; onRegenerate: () => void;
@@ -221,9 +315,10 @@ function SectionBlock({
 }) {
   const pending = section.suggestions.filter((s) => s.status === "pending").length;
   return (
-    <div className={`group rounded-lg border-l-2 pl-4 -ml-4 py-1 ${active ? "border-accent2" : "border-transparent"}`} onClick={onFocus}>
+    <div ref={registerRef} className={`group rounded-lg border-l-2 pl-4 -ml-4 py-1 transition-colors ${active ? "border-accent2" : "border-transparent"} ${highlight ? "bg-amber-100/60 dark:bg-amber-500/10" : ""}`} onClick={onFocus}>
       <div className="flex items-center gap-2 mb-1">
         <h2 className="text-lg font-semibold">{idx + 1}. {section.label}</h2>
+        <ProvenanceChip section={section} />
         {pending > 0 && <button onClick={(e) => { e.stopPropagation(); onAiReview(); }} className="text-[10px] rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 px-1.5 py-0.5">{pending} AI</button>}
         <div className="ml-auto opacity-0 group-hover:opacity-100 transition flex items-center gap-0.5 text-slate-500">
           <button onClick={(e) => { e.stopPropagation(); onMove("up"); }} disabled={idx === 0} title="Move up" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
