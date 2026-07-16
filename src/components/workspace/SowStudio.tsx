@@ -133,7 +133,9 @@ export function SowStudio() {
                 className={`w-full text-left text-xs rounded px-2 py-1.5 border transition ${activeSection?.id === s.id ? "border-accent2 bg-accent2/5" : "border-transparent hover:bg-muted/50"}`}>
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-medium truncate">{s.label}</span>
-                  <SectionStatusChip section={s} />
+                  <button onClick={(e) => { e.stopPropagation(); const cur = s.workflowStatus ?? "draft"; const next = WORKFLOW_CYCLE[(WORKFLOW_CYCLE.indexOf(cur) + 1) % WORKFLOW_CYCLE.length]; setSectionWorkflow(s.id, next); }}
+                    title={`Workflow: ${workflowLabel[s.workflowStatus ?? "draft"]} — click to change`}
+                    className={`text-[9px] rounded-full px-1.5 py-0.5 ${workflowClass[s.workflowStatus ?? "draft"]}`}>{workflowLabel[s.workflowStatus ?? "draft"]}</button>
                 </div>
                 <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                   <ProvenanceChip section={s} />
