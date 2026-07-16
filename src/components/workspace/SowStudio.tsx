@@ -96,8 +96,9 @@ export function SowStudio() {
   const openComments = state.comments.filter((c) => c.state === "open").length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_320px] gap-3 min-h-[600px]">
+    <div className={`grid grid-cols-1 gap-3 min-h-[600px] ${focusMode ? "" : "lg:grid-cols-[240px_1fr_320px]"}`}>
       {/* LEFT: Rail — outline OR evidence */}
+      {!focusMode && (
       <aside className="rounded-xl border bg-card p-3 space-y-2 order-2 lg:order-1">
         <div className="flex gap-1">
           <button onClick={() => setRail("outline")} className={`flex-1 text-[11px] rounded px-2 py-1 border ${state.railMode === "outline" ? "bg-accent2 text-white border-accent2" : "border-border text-muted-foreground"}`}><ListTree className="h-3 w-3 inline mr-1" />Outline</button>
@@ -112,10 +113,29 @@ export function SowStudio() {
                   <span className="font-medium truncate">{s.label}</span>
                   <SectionStatusChip section={s} />
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{s.currentBody ? `${s.currentBody.length} chars` : "empty"} · {s.suggestions.filter((x) => x.status === "pending").length} AI</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                  <ProvenanceChip section={s} />
+                  <span>· {s.currentBody ? `${s.currentBody.length} chars` : "empty"} · {s.suggestions.filter((x) => x.status === "pending").length} AI</span>
+                </div>
               </button>
             ))}
-            <Button size="sm" variant="outline" className="w-full text-[11px] mt-2 h-7" onClick={() => { const label = prompt("Section title?"); if (label) addSection(label); }}><Plus className="h-3 w-3 mr-1" />Add section</Button>
+            <div className="relative">
+              <Button size="sm" variant="outline" className="w-full text-[11px] mt-2 h-7" onClick={() => setAddOpen((v) => !v)}><Plus className="h-3 w-3 mr-1" />Add section</Button>
+              {addOpen && (
+                <div className="absolute z-30 mt-1 left-0 right-0 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg text-xs">
+                  {addableSections.length === 0 && <div className="p-2 text-muted-foreground">All template & pack sections already added.</div>}
+                  {addableSections.map((s) => (
+                    <button key={s.id} onClick={() => { addSection(s.label); setAddOpen(false); flash(`Added section: ${s.label}`); }} className="w-full text-left px-2 py-1.5 hover:bg-muted flex items-center justify-between">
+                      <span>{s.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{s.group}</span>
+                    </button>
+                  ))}
+                  <div className="border-t">
+                    <button onClick={() => { const label = prompt("Custom section title?"); if (label) { addSection(label); flash(`Added custom section: ${label}`); } setAddOpen(false); }} className="w-full text-left px-2 py-1.5 hover:bg-muted italic text-muted-foreground">+ Custom section…</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-1 text-xs">
@@ -126,6 +146,7 @@ export function SowStudio() {
           </div>
         )}
       </aside>
+      )}
 
       {/* CENTER: Word-like document */}
       <section className="space-y-3 order-1 lg:order-2 min-w-0">
@@ -136,12 +157,23 @@ export function SowStudio() {
           <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5">{draft.status}</span>
           {draft.metadata.vendor && <span className="text-muted-foreground">· {draft.metadata.vendor}</span>}
           <div className="ml-auto flex gap-1">
+            <IconBtn onClick={() => setFocusMode((v) => !v)} title={focusMode ? "Exit focus mode" : "Enter focus mode"}>{focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}</IconBtn>
             <IconBtn onClick={() => { setDrawer("meta"); }} title="Document details"><Settings2 className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("history")} title="Version history"><History className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("comments")} title="Comments" badge={openComments || undefined}><MessageSquareText className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("collab")} title="Collaborators"><Users className="h-3.5 w-3.5" /></IconBtn>
+            <IconBtn onClick={() => {
+              if (confirm("Global reset: clear ALL demo workspace data across every request? This cannot be undone.")) {
+                try {
+                  const keys = Object.keys(localStorage).filter((k) => k.startsWith("workspace-v3-") || k.startsWith("demo-"));
+                  keys.forEach((k) => localStorage.removeItem(k));
+                } catch {}
+                window.location.reload();
+              }
+            }} title="Global reset — clear all demo data"><RotateCcw className="h-3.5 w-3.5" /></IconBtn>
           </div>
         </div>
+
 
         {/* Generation status */}
         {generating && (
