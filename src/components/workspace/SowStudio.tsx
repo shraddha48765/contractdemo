@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useWorkspace } from "@/lib/workspace/WorkspaceProvider";
 import { industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
 import { exportDocx, exportEvidencePackZip } from "@/lib/workspace/exports";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   Sparkles, FileText, MessageSquareText, Users, Download, Printer, Send, Save,
   ChevronUp, ChevronDown, Trash2, Plus, RefreshCw, Check, X, History, Settings2, ListTree,
+  Maximize2, Minimize2, RotateCcw,
 } from "lucide-react";
 
 type Drawer = null | "ai" | "history" | "comments" | "collab" | "review" | "meta";
