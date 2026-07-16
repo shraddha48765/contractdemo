@@ -194,6 +194,8 @@ export function SowStudio() {
             {sortedSections.map((s, idx) => (
               <SectionBlock key={s.id} section={s} idx={idx} total={sortedSections.length}
                 active={activeSection?.id === s.id}
+                highlight={highlightId === s.id}
+                registerRef={(el) => { sectionRefs.current[s.id] = el; }}
                 onFocus={() => setSelectedSectionId(s.id)}
                 onChange={(body) => editSectionBody(s.id, body)}
                 onMove={(dir) => reorderSection(s.id, dir)}
