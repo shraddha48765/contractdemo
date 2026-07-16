@@ -23,13 +23,43 @@ export function SowStudio() {
   const draft = state.draft;
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<Drawer>(null);
+  const [templateId, setTemplateId] = useState<string>(industrialMaintenanceTemplate.id);
   const [packIds, setPackIds] = useState<string[]>(sectionPacks.map((p) => p.id));
   const [toast, setToast] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const flash = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
 
   const sortedSections = useMemo(() => draft ? [...draft.sections].sort((a, b) => a.order - b.order) : [], [draft]);
   const activeSection = draft && (selectedSectionId ? sortedSections.find((s) => s.id === selectedSectionId) : sortedSections[0]) || null;
+
+  // Outline click: scroll into view + brief highlight
+  useEffect(() => {
+    if (!selectedSectionId) return;
+    const el = sectionRefs.current[selectedSectionId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setHighlightId(selectedSectionId);
+      const t = setTimeout(() => setHighlightId(null), 1400);
+      return () => clearTimeout(t);
+    }
+  }, [selectedSectionId]);
+
+  // Available "+ Add Section" items — template + pack sections not already present, plus Custom
+  const addableSections = useMemo(() => {
+    if (!draft) return [] as { id: string; label: string; group: string }[];
+    const present = new Set(draft.sections.map((s) => s.id));
+    const tpl = industrialMaintenanceTemplate.baseSections
+      .filter((s) => !present.has(s.id))
+      .map((s) => ({ id: s.id, label: s.label, group: "Template" }));
+    const pk = sectionPacks.flatMap((p) => p.sections
+      .filter((s) => !present.has(s.id))
+      .map((s) => ({ id: s.id, label: s.label, group: p.name })));
+    return [...tpl, ...pk];
+  }, [draft]);
 
   // ---- Empty state ----
   if (!draft) {
