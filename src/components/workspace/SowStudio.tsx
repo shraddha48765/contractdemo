@@ -68,15 +68,20 @@ export function SowStudio() {
         <FileText className="h-10 w-10 mx-auto text-accent2" />
         <div className="text-lg font-semibold">SOW Draft Studio</div>
         <p className="text-sm text-muted-foreground">Confirm your evidence set on the Evidence & Intelligence tab, then generate a first draft here. Sections are grounded in the sources you include and appear progressively as they generate.</p>
-        <div className="text-left rounded-lg border bg-muted/30 p-3 space-y-2">
-          <div className="text-xs font-semibold">Template & section packs</div>
-          <div className="text-xs text-muted-foreground">{industrialMaintenanceTemplate.name} — {industrialMaintenanceTemplate.baseSections.length} base sections</div>
-          {sectionPacks.map((p) => (
-            <label key={p.id} className="flex items-start gap-2 text-xs">
-              <input type="checkbox" checked={packIds.includes(p.id)} onChange={(e) => setPackIds((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))} className="mt-0.5" />
-              <span><span className="font-medium">{p.name}</span> — <span className="text-muted-foreground">{p.description}</span></span>
-            </label>
-          ))}
+        <div className="text-left rounded-lg border bg-muted/30 p-3 space-y-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Base template</div>
+            <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="w-full h-8 rounded border bg-card text-xs px-2">
+              <option value={industrialMaintenanceTemplate.id}>{industrialMaintenanceTemplate.name} — {industrialMaintenanceTemplate.baseSections.length} sections</option>
+            </select>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Section packs</div>
+            <select multiple value={packIds} onChange={(e) => setPackIds(Array.from(e.target.selectedOptions).map((o) => o.value))} className="w-full min-h-[64px] rounded border bg-card text-xs px-2 py-1">
+              {sectionPacks.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <div className="text-[10px] text-muted-foreground mt-1">Hold ⌘/Ctrl to select multiple.</div>
+          </div>
         </div>
         <Button className="gap-1.5" onClick={() => generateDraft({ packIds })} disabled={includedEvidence.length === 0}>
           <Sparkles className="h-4 w-4" /> Generate first draft {includedEvidence.length === 0 && "(include evidence first)"}
