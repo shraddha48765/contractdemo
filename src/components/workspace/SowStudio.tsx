@@ -247,6 +247,7 @@ export function SowStudio() {
         {/* Action bar */}
         <div className="sticky bottom-0 bg-background/95 backdrop-blur rounded-xl border p-2 flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" className="gap-1" onClick={() => { const v = saveVersion(); if (v) flash(`Saved ${v.label}`); }}><Save className="h-3.5 w-3.5" /> Save draft</Button>
+          <Button size="sm" variant="outline" className="gap-1" onClick={() => { saveToDrive(); flash("Saved to Drive (demo)"); }}><HardDrive className="h-3.5 w-3.5" /> Save to Drive</Button>
           <Button size="sm" variant="outline" className="gap-1" onClick={() => setDrawer("review")}><Send className="h-3.5 w-3.5" /> Send for review</Button>
           <div className="ml-auto flex items-center gap-1">
             <Button size="sm" variant="outline" className="gap-1" onClick={async () => { await exportDocx(draft, `${draft.metadata.sowNumber}.docx`); flash("DOCX exported"); }}><Download className="h-3.5 w-3.5" /> Download DOCX</Button>
@@ -256,7 +257,11 @@ export function SowStudio() {
               await exportEvidencePackZip({ draft, evidence: includedEvidence, suggestions: allSug, comments: state.comments, reviewers: state.reviewers, audit: state.audit, filename: `${draft.metadata.sowNumber}-evidence-pack.zip` });
               flash("Evidence pack exported");
             }}><Download className="h-3.5 w-3.5" /> Export Evidence Pack (.zip)</Button>
-            <Button size="sm" className="gap-1" onClick={() => { if (confirm("Issue this draft to Apex Industrial Services? A v1.0 immutable version will be created.")) { issueToVendor("Apex Industrial Services"); flash("Draft issued to vendor as v1.0"); } }}><Send className="h-3.5 w-3.5" /> Issue to Vendor</Button>
+            {state.versions.some((v) => v.version === 1 && v.immutable) ? (
+              <Button size="sm" className="gap-1" onClick={() => { const r = createRevisedVendorDraft("Apex Industrial Services"); flash(r.created ? `Revised draft ${r.version?.label} created` : `Cannot create revised: ${r.reason}`); }}><CornerDownRight className="h-3.5 w-3.5" /> Revised Vendor Draft</Button>
+            ) : (
+              <Button size="sm" className="gap-1" onClick={() => { if (confirm("Issue this draft to Apex Industrial Services? A v1.0 immutable version will be created.")) { const r = issueToVendor("Apex Industrial Services"); flash(r.created ? "Draft issued to vendor as v1.0" : `Not issued: ${r.reason}`); } }}><Send className="h-3.5 w-3.5" /> Issue to Vendor</Button>
+            )}
           </div>
         </div>
       </section>
