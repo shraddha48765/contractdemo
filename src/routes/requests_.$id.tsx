@@ -7,6 +7,7 @@ import { KlydoTaskCard } from "@/components/KlydoTaskCard";
 import { SourceChip } from "@/components/SourceChip";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Upload, FileText, AlertTriangle, ShieldCheck, MessageSquareText, ChevronRight, Sparkles, Users, Download } from "lucide-react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { WorkspaceProvider } from "@/lib/workspace/WorkspaceProvider";
 import { EvidenceIntelligence } from "@/components/workspace/EvidenceIntelligence";
 import { SowStudio } from "@/components/workspace/SowStudio";
@@ -44,8 +45,8 @@ function RequestWorkspace() {
   const status = state.contractActivated
     ? "Active"
     : state.supplierConfirmed
-    ? "Evidence & Drafting"
-    : "Supplier Review In Progress";
+      ? "Evidence & Drafting"
+      : "Supplier Review In Progress";
 
   return (
     <AppLayout title="Industrial Maintenance Services Renewal – 2026" subtitle="REQ-IMS-2026-014 · 3-year renewal · $2.4M · Incumbent: Apex Industrial Services">
@@ -61,59 +62,75 @@ function RequestWorkspace() {
         </Button>
       </div>
 
-      {/* Blueprint strip */}
-      <div className="rounded-xl border border-accent2/30 bg-accent2/5 p-3 mb-3">
-        <div className="text-[10px] uppercase tracking-wider text-accent2 font-semibold mb-1.5">Blueprint Applied: Source-to-Contract Intelligence Lifecycle</div>
-        <div className="flex items-center gap-1 overflow-x-auto text-[11px] text-muted-foreground">
-          {["Intake","Category Strategy","Market Discovery","RFP Decision","Supplier Shortlist","Bid/SOW Comparison","Award Recommendation","Contract Package","Approval","Signature","Monitor","Reconcile","Renew"].map((s, i, arr) => (
-            <span key={s} className="shrink-0 flex items-center gap-1">
-              <span>{s}</span>
-              {i < arr.length - 1 && <span className="text-muted-foreground/40">→</span>}
-            </span>
-          ))}
-        </div>
-      </div>
+      {/* Blueprint · Summary · Progress accordion */}
+      <Accordion type="multiple" defaultValue={["blueprint", "summary", "progress"]} className="rounded-xl border overflow-hidden mb-4">
+        <AccordionItem value="blueprint" className="border-b border-accent2/30 bg-accent2/5">
+          <AccordionTrigger className="px-3 py-2 text-[10px] uppercase tracking-wider text-accent2 font-semibold hover:no-underline">
+            Blueprint Applied: Source-to-Contract Intelligence Lifecycle
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex items-center gap-1 overflow-x-auto text-[11px] text-muted-foreground px-3">
+              {["Intake", "Category Strategy", "Market Discovery", "RFP Decision", "Supplier Shortlist", "Bid/SOW Comparison", "Award Recommendation", "Contract Package", "Approval", "Signature", "Monitor", "Reconcile", "Renew"].map((s, i, arr) => (
+                <span key={s} className="shrink-0 flex items-center gap-1">
+                  <span>{s}</span>
+                  {i < arr.length - 1 && <span className="text-muted-foreground/40">→</span>}
+                </span>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* Executive summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <div className="rounded-xl border bg-card p-4">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Category</div>
-          <div className="text-sm font-semibold mt-1">Industrial Maintenance Services</div>
-          <div className="text-xs text-muted-foreground mt-0.5">3-year SOW · Multi-site · Critical operations</div>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sourcing Path</div>
-          <div className="text-sm font-semibold mt-1">Targeted competitive review</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Incumbent benchmarked against alternates</div>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Recommended Vendor</div>
-          <div className="text-sm font-semibold mt-1">Apex Industrial Services</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Pending buyer confirmation</div>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Value Under Control</div>
-          <div className="text-sm font-semibold mt-1">7% modeled value protection</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Leakage · Reconciliation · SLA · Invoice controls</div>
-        </div>
-      </div>
-
-      {/* Klydo progress strip */}
-      <div className="rounded-xl border bg-card p-3 mb-4">
-        <div className="flex items-center justify-between gap-2 overflow-x-auto text-[11px]">
-          {["Intake","Supplier Review","Evidence","Drafting","Redline","Legal","Finance","Mgr Approval","Signature","Activation","Monitoring"].map((s, i, arr) => {
-            const stageIdx = state.contractActivated ? 10 : state.redlineUploaded ? 5 : state.supplierConfirmed ? 3 : 1;
-            const done = i <= stageIdx;
-            return (
-              <div key={s} className="flex items-center gap-1.5 shrink-0">
-                <div className={`h-2 w-2 rounded-full ${done ? "bg-accent2" : "bg-muted-foreground/30"}`} />
-                <span className={done ? "text-foreground" : "text-muted-foreground"}>{s}</span>
-                {i < arr.length - 1 && <span className="text-muted-foreground/40 mx-1">→</span>}
+        <AccordionItem value="summary" className="border-b">
+          <AccordionTrigger className="px-3 py-2 text-xs font-semibold hover:no-underline">
+            Executive Summary
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-3">
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Category</div>
+                <div className="text-sm font-semibold mt-1">Industrial Maintenance Services</div>
+                <div className="text-xs text-muted-foreground mt-0.5">3-year SOW · Multi-site · Critical operations</div>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sourcing Path</div>
+                <div className="text-sm font-semibold mt-1">Targeted competitive review</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Incumbent benchmarked against alternates</div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Recommended Vendor</div>
+                <div className="text-sm font-semibold mt-1">Apex Industrial Services</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Pending buyer confirmation</div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Value Under Control</div>
+                <div className="text-sm font-semibold mt-1">7% modeled value protection</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Leakage · Reconciliation · SLA · Invoice controls</div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="progress" className="border-b-0">
+          <AccordionTrigger className="px-3 py-2 text-xs font-semibold hover:no-underline">
+            Workflow Progress
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex items-center justify-between gap-2 overflow-x-auto text-[11px] px-3">
+              {["Intake", "Supplier Review", "Evidence", "Drafting", "Redline", "Legal", "Finance", "Mgr Approval", "Signature", "Activation", "Monitoring"].map((s, i, arr) => {
+                const stageIdx = state.contractActivated ? 10 : state.redlineUploaded ? 5 : state.supplierConfirmed ? 3 : 1;
+                const done = i <= stageIdx;
+                return (
+                  <div key={s} className="flex items-center gap-1.5 shrink-0">
+                    <div className={`h-2 w-2 rounded-full ${done ? "bg-accent2" : "bg-muted-foreground/30"}`} />
+                    <span className={done ? "text-foreground" : "text-muted-foreground"}>{s}</span>
+                    {i < arr.length - 1 && <span className="text-muted-foreground/40 mx-1">→</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4 border-b overflow-x-auto">
@@ -121,9 +138,8 @@ function RequestWorkspace() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-3 py-2 text-xs whitespace-nowrap border-b-2 transition ${
-              tab === t.id ? "border-accent2 text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-3 py-2 text-xs whitespace-nowrap border-b-2 transition ${tab === t.id ? "border-accent2 text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
             {t.label}
           </button>
@@ -148,91 +164,91 @@ function RequestSummary() {
   const { state } = useDemo();
   return (
     <div className="space-y-4">
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 rounded-xl border bg-card p-5 space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold mb-1">Business need</h3>
-          <p className="text-sm text-muted-foreground">
-            Multi-site industrial maintenance support with emergency response, preventive maintenance,
-            materials pass-through, technician certification, and SLA / service credit controls.
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl border bg-card p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold mb-1">Business need</h3>
+            <p className="text-sm text-muted-foreground">
+              Multi-site industrial maintenance support with emergency response, preventive maintenance,
+              materials pass-through, technician certification, and SLA / service credit controls.
+            </p>
+          </div>
+          <dl className="grid grid-cols-2 gap-y-3 text-sm">
+            <Field label="Contract value" value="$2.4M estimated over 3 years" />
+            <Field label="Sites / scope" value="6 plants, regional" />
+            <Field label="Emergency SLA" value="4-hour response" />
+            <Field label="Completion target" value="95% monthly" />
+            <Field label="Service credit" value="1.5% if SLA missed two consecutive months" />
+            <Field label="Change order rule" value="Approval required above $25K" />
+            <Field label="Compliance" value="Insurance · safety · technician cert." />
+            <Field label="Renewal review" value="120-day window" />
+          </dl>
+          <div className="pt-2 border-t">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Source</div>
+            <SourceChip id="request-intake" />
+          </div>
+        </div>
+        <div className="rounded-xl border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-semibold">Supplier context</h3>
+          <div className="space-y-2 text-xs">
+            <SupplierLine name="Apex Industrial Services" tag={state.supplierConfirmed ? "Selected Supplier" : "Incumbent / known"} highlight={state.supplierConfirmed} />
+            <SupplierLine name="Northstar Maintenance Group" tag="Historical alternate" />
+            <SupplierLine name="Elevate Field Services" tag="New vendor option" />
+          </div>
+          {!state.supplierConfirmed && (
+            <div className="rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
+              Apex appears as incumbent. Selection requires Procurement Buyer confirmation.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl border bg-card p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">Category Strategy Applied</h3>
+            <SourceChip id="category-playbook-ims" />
+          </div>
+          <dl className="text-xs space-y-1.5">
+            <div><dt className="text-muted-foreground inline">Procurement type: </dt><dd className="inline">Service procurement with materials pass-through</dd></div>
+            <div><dt className="text-muted-foreground inline">Sourcing playbook: </dt><dd className="inline">Industrial Maintenance Services Renewal</dd></div>
+            <div><dt className="text-muted-foreground inline">Primary benchmarks: </dt><dd className="inline">labor rates, escalation, SLA response, service completion, HSSE, certifications, change-order exposure</dd></div>
+            <div><dt className="text-muted-foreground inline">Secondary benchmarks: </dt><dd className="inline">materials pass-through, markup, invoice support</dd></div>
+            <div><dt className="text-muted-foreground inline">Not primary for this request: </dt><dd className="inline">inventory turns, warehouse carrying cost, commodity stockout risk</dd></div>
+            <div><dt className="text-muted-foreground inline">Buyer decision needed: </dt><dd className="inline font-medium">Confirm sourcing path</dd></div>
+          </dl>
+          <p className="text-[11px] text-muted-foreground border-t pt-2">
+            For material procurement, benchmark criteria would shift to unit price, lead time, freight, quality/spec compliance, inventory availability, warranty, volume discount, manufacturer price-change evidence, substitution risk, and supplier delivery reliability.
           </p>
         </div>
-        <dl className="grid grid-cols-2 gap-y-3 text-sm">
-          <Field label="Contract value" value="$2.4M estimated over 3 years" />
-          <Field label="Sites / scope" value="6 plants, regional" />
-          <Field label="Emergency SLA" value="4-hour response" />
-          <Field label="Completion target" value="95% monthly" />
-          <Field label="Service credit" value="1.5% if SLA missed two consecutive months" />
-          <Field label="Change order rule" value="Approval required above $25K" />
-          <Field label="Compliance" value="Insurance · safety · technician cert." />
-          <Field label="Renewal review" value="120-day window" />
-        </dl>
-        <div className="pt-2 border-t">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Source</div>
-          <SourceChip id="request-intake" />
-        </div>
-      </div>
-      <div className="rounded-xl border bg-card p-5 space-y-3">
-        <h3 className="text-sm font-semibold">Supplier context</h3>
-        <div className="space-y-2 text-xs">
-          <SupplierLine name="Apex Industrial Services" tag={state.supplierConfirmed ? "Selected Supplier" : "Incumbent / known"} highlight={state.supplierConfirmed} />
-          <SupplierLine name="Northstar Maintenance Group" tag="Historical alternate" />
-          <SupplierLine name="Elevate Field Services" tag="New vendor option" />
-        </div>
-        {!state.supplierConfirmed && (
-          <div className="rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-[11px] text-warning">
-            Apex appears as incumbent. Selection requires Procurement Buyer confirmation.
-          </div>
-        )}
-      </div>
-    </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="rounded-xl border bg-card p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">Category Strategy Applied</h3>
-          <SourceChip id="category-playbook-ims" />
+        <div className="rounded-xl border bg-card p-5 space-y-2">
+          <h3 className="text-sm font-semibold">Value Protection Summary</h3>
+          <p className="text-[11px] text-muted-foreground -mt-1">Each metric is source-backed. Expand to view calculation basis.</p>
+          <ul className="text-xs space-y-1.5">
+            <ValueProtectionRow label="Escalation exposure avoided" value="$48K"
+              sources={["apex-rate-card-v2", "market-benchmark", "escalation-cap-clause"]}
+              calc="Modeled avoided exposure based on 5% proposed escalation vs 3% recommended cap over the labor-rate portion of the 3-year package." />
+            <ValueProtectionRow label="Scope-gap exposure prevented" value="$74K"
+              sources={["prior-change-order", "northstar-prior-sow", "exhibit-d"]}
+              calc="Modeled avoided exposure from prior scope gap that previously required a change order. The new Exhibit D draft inserts weekend emergency coverage upfront." />
+            <ValueProtectionRow label="Invoice-rate variance flagged" value="$18.6K"
+              sources={["invoice-1842", "apex-rate-card-v2", "exhibit-c"]}
+              calc="Modeled exception based on invoice labor/rate lines compared against the approved rate card and invoice support requirements." />
+            <ValueProtectionRow label="Materials markup exposure reviewed" value="$12K"
+              sources={["exhibit-c", "exhibit-c1"]}
+              calc="Modeled review based on materials pass-through, markup rules, and required supporting invoice evidence." />
+            <ValueProtectionRow label="Service credit opportunity" value="$42K"
+              sources={["sla-logs", "service-credit-clause", "exhibit-d"]}
+              calc="Modeled service credit opportunity triggered when SLA target is missed for two consecutive months." />
+            <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K modeled</span></li>
+          </ul>
+          <p className="text-[11px] text-muted-foreground pt-1">
+            Demo seed values. In production, calculations would use approved contract terms, historical spend, supplier data, invoices, performance records, and CITGO-approved benchmark sources.
+          </p>
         </div>
-        <dl className="text-xs space-y-1.5">
-          <div><dt className="text-muted-foreground inline">Procurement type: </dt><dd className="inline">Service procurement with materials pass-through</dd></div>
-          <div><dt className="text-muted-foreground inline">Sourcing playbook: </dt><dd className="inline">Industrial Maintenance Services Renewal</dd></div>
-          <div><dt className="text-muted-foreground inline">Primary benchmarks: </dt><dd className="inline">labor rates, escalation, SLA response, service completion, HSSE, certifications, change-order exposure</dd></div>
-          <div><dt className="text-muted-foreground inline">Secondary benchmarks: </dt><dd className="inline">materials pass-through, markup, invoice support</dd></div>
-          <div><dt className="text-muted-foreground inline">Not primary for this request: </dt><dd className="inline">inventory turns, warehouse carrying cost, commodity stockout risk</dd></div>
-          <div><dt className="text-muted-foreground inline">Buyer decision needed: </dt><dd className="inline font-medium">Confirm sourcing path</dd></div>
-        </dl>
-        <p className="text-[11px] text-muted-foreground border-t pt-2">
-          For material procurement, benchmark criteria would shift to unit price, lead time, freight, quality/spec compliance, inventory availability, warranty, volume discount, manufacturer price-change evidence, substitution risk, and supplier delivery reliability.
-        </p>
-      </div>
 
-      <div className="rounded-xl border bg-card p-5 space-y-2">
-        <h3 className="text-sm font-semibold">Value Protection Summary</h3>
-        <p className="text-[11px] text-muted-foreground -mt-1">Each metric is source-backed. Expand to view calculation basis.</p>
-        <ul className="text-xs space-y-1.5">
-          <ValueProtectionRow label="Escalation exposure avoided" value="$48K"
-            sources={["apex-rate-card-v2","market-benchmark","escalation-cap-clause"]}
-            calc="Modeled avoided exposure based on 5% proposed escalation vs 3% recommended cap over the labor-rate portion of the 3-year package." />
-          <ValueProtectionRow label="Scope-gap exposure prevented" value="$74K"
-            sources={["prior-change-order","northstar-prior-sow","exhibit-d"]}
-            calc="Modeled avoided exposure from prior scope gap that previously required a change order. The new Exhibit D draft inserts weekend emergency coverage upfront." />
-          <ValueProtectionRow label="Invoice-rate variance flagged" value="$18.6K"
-            sources={["invoice-1842","apex-rate-card-v2","exhibit-c"]}
-            calc="Modeled exception based on invoice labor/rate lines compared against the approved rate card and invoice support requirements." />
-          <ValueProtectionRow label="Materials markup exposure reviewed" value="$12K"
-            sources={["exhibit-c","exhibit-c1"]}
-            calc="Modeled review based on materials pass-through, markup rules, and required supporting invoice evidence." />
-          <ValueProtectionRow label="Service credit opportunity" value="$42K"
-            sources={["sla-logs","service-credit-clause","exhibit-d"]}
-            calc="Modeled service credit opportunity triggered when SLA target is missed for two consecutive months." />
-          <li className="flex justify-between rounded border border-accent2/40 bg-accent2/5 p-2"><span className="font-medium">Total value under control</span><span className="font-semibold text-accent2">$194.6K modeled</span></li>
-        </ul>
-        <p className="text-[11px] text-muted-foreground pt-1">
-          Demo seed values. In production, calculations would use approved contract terms, historical spend, supplier data, invoices, performance records, and CITGO-approved benchmark sources.
-        </p>
       </div>
-
-    </div>
     </div>
   );
 }
@@ -643,66 +659,65 @@ function ApprovalsHistory() {
   ] as const;
   return (
     <div className="space-y-4">
-    <div className="rounded-xl border bg-card overflow-hidden">
-      <div className="px-4 py-3 border-b text-sm font-semibold">Decision Log / Buyer Override</div>
-      <table className="w-full text-xs">
-        <thead className="bg-muted/60 text-muted-foreground">
-          <tr>
-            <th className="text-left px-4 py-2 font-medium">Decision</th>
-            <th className="text-left px-4 py-2 font-medium">Recommendation</th>
-            <th className="text-left px-4 py-2 font-medium">Human action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {decisionLog.map(([d, rec, act, tone]) => (
-            <tr key={d} className="border-t">
-              <td className="px-4 py-2 font-medium">{d}</td>
-              <td className="px-4 py-2 text-muted-foreground">{rec}</td>
-              <td className="px-4 py-2">
-                <span className={`rounded-full px-2 py-0.5 font-medium ${tone === "success" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>{act}</span>
-              </td>
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="px-4 py-3 border-b text-sm font-semibold">Decision Log / Buyer Override</div>
+        <table className="w-full text-xs">
+          <thead className="bg-muted/60 text-muted-foreground">
+            <tr>
+              <th className="text-left px-4 py-2 font-medium">Decision</th>
+              <th className="text-left px-4 py-2 font-medium">Recommendation</th>
+              <th className="text-left px-4 py-2 font-medium">Human action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-
-    <div className="rounded-xl border bg-card overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/60 text-xs text-muted-foreground">
-          <tr>
-            <th className="text-left px-4 py-2.5 font-medium">Approval</th>
-            <th className="text-left px-4 py-2.5 font-medium">Owner</th>
-            <th className="text-left px-4 py-2.5 font-medium">Status</th>
-            <th className="text-left px-4 py-2.5 font-medium">Source / Comment</th>
-            <th className="text-left px-4 py-2.5 font-medium">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const st = state.approvals[r.k];
-            return (
-              <tr key={r.k} className="border-t">
-                <td className="px-4 py-3">{r.label}</td>
-                <td className="px-4 py-3 text-xs">{r.owner}</td>
-                <td className="px-4 py-3 text-xs">
-                  <span className={`rounded-full px-2 py-0.5 font-medium ${
-                    st === "Approved" ? "bg-success/15 text-success" : st === "Rejected" ? "bg-risk/15 text-risk" : "bg-muted text-muted-foreground"
-                  }`}>{st}</span>
-                </td>
-                <td className="px-4 py-3 text-xs"><SourceChip id="service-credit-clause" /></td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => setApproval(r.k, "Approved")}>Approve</Button>
-                    <Button size="sm" variant="outline" onClick={() => setApproval(r.k, "Rejected")}>Reject</Button>
-                  </div>
+          </thead>
+          <tbody>
+            {decisionLog.map(([d, rec, act, tone]) => (
+              <tr key={d} className="border-t">
+                <td className="px-4 py-2 font-medium">{d}</td>
+                <td className="px-4 py-2 text-muted-foreground">{rec}</td>
+                <td className="px-4 py-2">
+                  <span className={`rounded-full px-2 py-0.5 font-medium ${tone === "success" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>{act}</span>
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/60 text-xs text-muted-foreground">
+            <tr>
+              <th className="text-left px-4 py-2.5 font-medium">Approval</th>
+              <th className="text-left px-4 py-2.5 font-medium">Owner</th>
+              <th className="text-left px-4 py-2.5 font-medium">Status</th>
+              <th className="text-left px-4 py-2.5 font-medium">Source / Comment</th>
+              <th className="text-left px-4 py-2.5 font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const st = state.approvals[r.k];
+              return (
+                <tr key={r.k} className="border-t">
+                  <td className="px-4 py-3">{r.label}</td>
+                  <td className="px-4 py-3 text-xs">{r.owner}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className={`rounded-full px-2 py-0.5 font-medium ${st === "Approved" ? "bg-success/15 text-success" : st === "Rejected" ? "bg-risk/15 text-risk" : "bg-muted text-muted-foreground"
+                      }`}>{st}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs"><SourceChip id="service-credit-clause" /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" onClick={() => setApproval(r.k, "Approved")}>Approve</Button>
+                      <Button size="sm" variant="outline" onClick={() => setApproval(r.k, "Rejected")}>Reject</Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -804,11 +819,10 @@ function VendorExchangePanel({ open, onClose }: { open: boolean; onClose: () => 
                       <FileText className="h-3 w-3 text-muted-foreground" />
                       <span>{c.item}</span>
                     </div>
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] ${
-                      status === "Approved" ? "bg-success/15 text-success" :
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] ${status === "Approved" ? "bg-success/15 text-success" :
                       status === "Submitted" || status === "Under Review" ? "bg-warning/15 text-warning" :
-                      "bg-muted text-muted-foreground"
-                    }`}>{status}</span>
+                        "bg-muted text-muted-foreground"
+                      }`}>{status}</span>
                   </div>
                 );
               })}
