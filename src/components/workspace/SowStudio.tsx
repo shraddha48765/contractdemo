@@ -1,22 +1,32 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useWorkspace } from "@/lib/workspace/WorkspaceProvider";
-import { industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
+import { availableTemplates, industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
 import { exportDocx, exportEvidencePackZip } from "@/lib/workspace/exports";
-import type { DraftSection, SectionRevision, SuggestedChange } from "@/lib/workspace/types";
+import type { DraftSection, SectionRevision, SuggestedChange, WorkflowStatus } from "@/lib/workspace/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sparkles, FileText, MessageSquareText, Users, Download, Printer, Send, Save,
-  ChevronUp, ChevronDown, Trash2, Plus, RefreshCw, Check, X, History, Settings2, ListTree,
-  Maximize2, Minimize2, RotateCcw,
+  ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, Trash2, Plus, RefreshCw, Check, X, History, Settings2, ListTree,
+  RotateCcw, HardDrive, CornerDownRight,
 } from "lucide-react";
 
 type Drawer = null | "ai" | "history" | "comments" | "collab" | "review" | "meta";
+const WORKFLOW_CYCLE: WorkflowStatus[] = ["draft", "needs-review", "approved", "rejected"];
+const workflowLabel: Record<WorkflowStatus, string> = {
+  draft: "Draft", "needs-review": "Needs Review", approved: "Approved", rejected: "Rejected",
+};
+const workflowClass: Record<WorkflowStatus, string> = {
+  draft: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
+  "needs-review": "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  approved: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  rejected: "bg-rose-500/15 text-rose-700 dark:text-rose-400",
+};
 
 export function SowStudio() {
   const ws = useWorkspace();
   const { state, includedEvidence, generateDraft, saveVersion, issueToVendor, editSectionBody,
-    reorderSection, removeSection, addSection, setSuggestionStatus, regenerateSection,
+    reorderSection, removeSection, addSection, setSuggestionStatus, regenerateSection, setSectionWorkflow, saveToDrive, createRevisedVendorDraft,
     addReviewer, addComment, resolveComment, addCollaborator, removeCollaborator,
     setCollaboratorAccess, setRail, updateMetadata } = ws;
 
@@ -26,6 +36,10 @@ export function SowStudio() {
   const [templateId, setTemplateId] = useState<string>(industrialMaintenanceTemplate.id);
   const [packIds, setPackIds] = useState<string[]>(sectionPacks.map((p) => p.id));
   const [toast, setToast] = useState<string | null>(null);
+  const [addCustomOpen, setAddCustomOpen] = useState(false);
+  const [customLabel, setCustomLabel] = useState("");
+  const [regenOpen, setRegenOpen] = useState<{ sectionId: string; instruction: string } | null>(null);
+  const [issueNotice, setIssueNotice] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -71,19 +85,27 @@ export function SowStudio() {
         <div className="text-left rounded-lg border bg-muted/30 p-3 space-y-3">
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Base template</div>
-            <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="w-full h-8 rounded border bg-card text-xs px-2">
-              <option value={industrialMaintenanceTemplate.id}>{industrialMaintenanceTemplate.name} — {industrialMaintenanceTemplate.baseSections.length} sections</option>
+            <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="w-full h-8 rounded border bg-card text-xs px-2" aria-label="Base template">
+              {availableTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.id === industrialMaintenanceTemplate.id ? " — Recommended" : ""} · {t.baseSections.length} sections
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Section packs</div>
-            <select multiple value={packIds} onChange={(e) => setPackIds(Array.from(e.target.selectedOptions).map((o) => o.value))} className="w-full min-h-[64px] rounded border bg-card text-xs px-2 py-1">
-              {sectionPacks.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <div className="text-[10px] text-muted-foreground mt-1">Hold ⌘/Ctrl to select multiple.</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Add section packs</div>
+            <div className="space-y-1">
+              {sectionPacks.map((p) => (
+                <label key={p.id} className="flex items-start gap-2 text-xs">
+                  <input type="checkbox" checked={packIds.includes(p.id)} onChange={(e) => setPackIds((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))} className="mt-0.5" />
+                  <span><span className="font-medium">{p.name}</span> <span className="text-muted-foreground">— {p.description}</span></span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
-        <Button className="gap-1.5" onClick={() => generateDraft({ packIds })} disabled={includedEvidence.length === 0}>
+        <Button className="gap-1.5" onClick={() => generateDraft({ templateId, packIds })} disabled={includedEvidence.length === 0}>
           <Sparkles className="h-4 w-4" /> Generate first draft {includedEvidence.length === 0 && "(include evidence first)"}
         </Button>
       </div>
@@ -111,7 +133,9 @@ export function SowStudio() {
                 className={`w-full text-left text-xs rounded px-2 py-1.5 border transition ${activeSection?.id === s.id ? "border-accent2 bg-accent2/5" : "border-transparent hover:bg-muted/50"}`}>
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-medium truncate">{s.label}</span>
-                  <SectionStatusChip section={s} />
+                  <button onClick={(e) => { e.stopPropagation(); const cur = s.workflowStatus ?? "draft"; const next = WORKFLOW_CYCLE[(WORKFLOW_CYCLE.indexOf(cur) + 1) % WORKFLOW_CYCLE.length]; setSectionWorkflow(s.id, next); }}
+                    title={`Workflow: ${workflowLabel[s.workflowStatus ?? "draft"]} — click to change`}
+                    className={`text-[9px] rounded-full px-1.5 py-0.5 ${workflowClass[s.workflowStatus ?? "draft"]}`}>{workflowLabel[s.workflowStatus ?? "draft"]}</button>
                 </div>
                 <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                   <ProvenanceChip section={s} />
@@ -125,13 +149,22 @@ export function SowStudio() {
                 <div className="absolute z-30 mt-1 left-0 right-0 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg text-xs">
                   {addableSections.length === 0 && <div className="p-2 text-muted-foreground">All template & pack sections already added.</div>}
                   {addableSections.map((s) => (
-                    <button key={s.id} onClick={() => { addSection(s.label); setAddOpen(false); flash(`Added section: ${s.label}`); }} className="w-full text-left px-2 py-1.5 hover:bg-muted flex items-center justify-between">
+                    <button key={s.id} onClick={() => { addSection(s.label, { sectionId: s.id, insertAfterId: activeSection?.id }); setAddOpen(false); flash(`Added section: ${s.label}`); }} className="w-full text-left px-2 py-1.5 hover:bg-muted flex items-center justify-between">
                       <span>{s.label}</span>
                       <span className="text-[10px] text-muted-foreground">{s.group}</span>
                     </button>
                   ))}
                   <div className="border-t">
-                    <button onClick={() => { const label = prompt("Custom section title?"); if (label) { addSection(label); flash(`Added custom section: ${label}`); } setAddOpen(false); }} className="w-full text-left px-2 py-1.5 hover:bg-muted italic text-muted-foreground">+ Custom section…</button>
+                    <button onClick={() => { setAddOpen(false); setAddCustomOpen(true); }} className="w-full text-left px-2 py-1.5 hover:bg-muted italic text-muted-foreground">+ Custom section…</button>
+                  </div>
+                </div>
+              )}
+              {addCustomOpen && (
+                <div className="absolute z-30 mt-1 left-0 right-0 rounded-md border bg-popover shadow-lg p-2 space-y-2">
+                  <Input autoFocus value={customLabel} onChange={(e) => setCustomLabel(e.target.value)} placeholder="Section title…" className="h-7 text-xs" onKeyDown={(e) => { if (e.key === "Enter" && customLabel.trim()) { addSection(customLabel.trim(), { insertAfterId: activeSection?.id }); flash(`Added: ${customLabel.trim()}`); setCustomLabel(""); setAddCustomOpen(false); } if (e.key === "Escape") { setAddCustomOpen(false); setCustomLabel(""); } }} />
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => { setAddCustomOpen(false); setCustomLabel(""); }}>Cancel</Button>
+                    <Button size="sm" className="h-6 text-[11px]" disabled={!customLabel.trim()} onClick={() => { addSection(customLabel.trim(), { insertAfterId: activeSection?.id }); flash(`Added: ${customLabel.trim()}`); setCustomLabel(""); setAddCustomOpen(false); }}>Add</Button>
                   </div>
                 </div>
               )}
@@ -156,8 +189,9 @@ export function SowStudio() {
           <span className="text-muted-foreground">Rev {draft.metadata.revision}</span>
           <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5">{draft.status}</span>
           {draft.metadata.vendor && <span className="text-muted-foreground">· {draft.metadata.vendor}</span>}
-          <div className="ml-auto flex gap-1">
-            <IconBtn onClick={() => setFocusMode((v) => !v)} title={focusMode ? "Exit focus mode" : "Enter focus mode"}>{focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}</IconBtn>
+          <div className="ml-auto flex items-center gap-1">
+            <button onClick={() => setFocusMode((v) => !v)} title={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"} className={`text-[10px] rounded-full px-2 py-0.5 border ${focusMode ? "bg-accent2 text-white border-accent2" : "bg-muted/40 border-border hover:bg-muted"}`}>{focusMode ? "Focus: ON" : "Focus Mode"}</button>
+            
             <IconBtn onClick={() => { setDrawer("meta"); }} title="Document details"><Settings2 className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("history")} title="Version history"><History className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("comments")} title="Comments" badge={openComments || undefined}><MessageSquareText className="h-3.5 w-3.5" /></IconBtn>
@@ -201,7 +235,7 @@ export function SowStudio() {
                 onMove={(dir) => reorderSection(s.id, dir)}
                 onRemove={() => { if (confirm(`Remove section "${s.label}"?`)) removeSection(s.id); }}
                 onAiReview={() => { setSelectedSectionId(s.id); setDrawer("ai"); }}
-                onRegenerate={async () => { const inst = prompt("Refinement instructions?"); if (inst) { await regenerateSection(s.id, inst); flash("AI proposal added — open AI Review to accept."); setSelectedSectionId(s.id); setDrawer("ai"); } }}
+                onRegenerate={() => { setSelectedSectionId(s.id); setRegenOpen({ sectionId: s.id, instruction: "" }); }}
                 onHistory={() => { setSelectedSectionId(s.id); setDrawer("history"); }}
                 onComment={() => { setSelectedSectionId(s.id); setDrawer("comments"); }}
                 onSendForReview={() => { setSelectedSectionId(s.id); setDrawer("review"); }}
@@ -213,6 +247,7 @@ export function SowStudio() {
         {/* Action bar */}
         <div className="sticky bottom-0 bg-background/95 backdrop-blur rounded-xl border p-2 flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" className="gap-1" onClick={() => { const v = saveVersion(); if (v) flash(`Saved ${v.label}`); }}><Save className="h-3.5 w-3.5" /> Save draft</Button>
+          <Button size="sm" variant="outline" className="gap-1" onClick={() => { saveToDrive(); flash("Saved to Drive (demo)"); }}><HardDrive className="h-3.5 w-3.5" /> Save to Drive</Button>
           <Button size="sm" variant="outline" className="gap-1" onClick={() => setDrawer("review")}><Send className="h-3.5 w-3.5" /> Send for review</Button>
           <div className="ml-auto flex items-center gap-1">
             <Button size="sm" variant="outline" className="gap-1" onClick={async () => { await exportDocx(draft, `${draft.metadata.sowNumber}.docx`); flash("DOCX exported"); }}><Download className="h-3.5 w-3.5" /> Download DOCX</Button>
@@ -222,7 +257,11 @@ export function SowStudio() {
               await exportEvidencePackZip({ draft, evidence: includedEvidence, suggestions: allSug, comments: state.comments, reviewers: state.reviewers, audit: state.audit, filename: `${draft.metadata.sowNumber}-evidence-pack.zip` });
               flash("Evidence pack exported");
             }}><Download className="h-3.5 w-3.5" /> Export Evidence Pack (.zip)</Button>
-            <Button size="sm" className="gap-1" onClick={() => { if (confirm("Issue this draft to Apex Industrial Services? A v1.0 immutable version will be created.")) { issueToVendor("Apex Industrial Services"); flash("Draft issued to vendor as v1.0"); } }}><Send className="h-3.5 w-3.5" /> Issue to Vendor</Button>
+            {state.versions.some((v) => v.version === 1 && v.immutable) ? (
+              <Button size="sm" className="gap-1" onClick={() => { const r = createRevisedVendorDraft("Apex Industrial Services"); flash(r.created ? `Revised draft ${r.version?.label} created` : `Cannot create revised: ${r.reason}`); }}><CornerDownRight className="h-3.5 w-3.5" /> Revised Vendor Draft</Button>
+            ) : (
+              <Button size="sm" className="gap-1" onClick={() => { if (confirm("Issue this draft to Apex Industrial Services? A v1.0 immutable version will be created.")) { const r = issueToVendor("Apex Industrial Services"); flash(r.created ? "Draft issued to vendor as v1.0" : `Not issued: ${r.reason}`); } }}><Send className="h-3.5 w-3.5" /> Issue to Vendor</Button>
+            )}
           </div>
         </div>
       </section>
@@ -262,6 +301,19 @@ export function SowStudio() {
         {drawer === "meta" && <MetaDrawer onSave={(m) => { updateMetadata(m); flash("Metadata updated"); }} />}
       </DrawerHost>}
 
+      {regenOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setRegenOpen(null)}>
+          <div className="w-full max-w-lg rounded-xl border bg-card shadow-xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent2" /> Refine section with AI</div>
+            <p className="text-xs text-muted-foreground">Describe the change you want. The AI will add a tracked suggestion — nothing is applied until you accept it in AI Review.</p>
+            <textarea autoFocus rows={4} value={regenOpen.instruction} onChange={(e) => setRegenOpen({ ...regenOpen, instruction: e.target.value })} className="w-full rounded border bg-background text-xs p-2 font-mono" placeholder="e.g. Tighten SLA to 4-hour response and reference MSA §7." />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setRegenOpen(null)}>Cancel</Button>
+              <Button size="sm" disabled={!regenOpen.instruction.trim()} onClick={async () => { const { sectionId, instruction } = regenOpen; setRegenOpen(null); await regenerateSection(sectionId, instruction.trim()); flash("AI proposal added — open AI Review to accept."); setDrawer("ai"); }}><Sparkles className="h-3.5 w-3.5 mr-1" /> Generate proposal</Button>
+            </div>
+          </div>
+        </div>
+      )}
       {toast && <div className="fixed bottom-4 right-4 z-50 bg-foreground text-background text-xs rounded-lg px-3 py-2 shadow-lg">{toast}</div>}
     </div>
   );
@@ -309,7 +361,7 @@ function SectionBlock({
   section: DraftSection; idx: number; total: number; active: boolean;
   highlight: boolean; registerRef: (el: HTMLDivElement | null) => void;
   onFocus: () => void; onChange: (body: string) => void;
-  onMove: (dir: "up" | "down") => void; onRemove: () => void;
+  onMove: (dir: "up" | "down" | "top" | "bottom") => void; onRemove: () => void;
   onAiReview: () => void; onRegenerate: () => void;
   onHistory: () => void; onComment: () => void; onSendForReview: () => void;
 }) {
@@ -321,8 +373,10 @@ function SectionBlock({
         <ProvenanceChip section={section} />
         {pending > 0 && <button onClick={(e) => { e.stopPropagation(); onAiReview(); }} className="text-[10px] rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 px-1.5 py-0.5">{pending} AI</button>}
         <div className="ml-auto opacity-0 group-hover:opacity-100 transition flex items-center gap-0.5 text-slate-500">
+          <button onClick={(e) => { e.stopPropagation(); onMove("top"); }} disabled={idx === 0} title="Move to top" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronsUp className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onMove("up"); }} disabled={idx === 0} title="Move up" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onMove("down"); }} disabled={idx === total - 1} title="Move down" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onMove("bottom"); }} disabled={idx === total - 1} title="Move to bottom" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronsDown className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onRegenerate(); }} title="Regenerate" className="p-1 hover:bg-slate-100 rounded"><RefreshCw className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onComment(); }} title="Comment" className="p-1 hover:bg-slate-100 rounded"><MessageSquareText className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onSendForReview(); }} title="Send for review" className="p-1 hover:bg-slate-100 rounded"><Send className="h-3.5 w-3.5" /></button>
