@@ -228,6 +228,7 @@ export function SowStudio() {
       </section>
 
       {/* RIGHT: contextual info */}
+      {!focusMode && (
       <aside className="rounded-xl border bg-card p-3 space-y-2 order-3 text-xs">
         <div className="font-semibold text-sm">Context</div>
         <div className="text-muted-foreground">{pendingCount} pending AI suggestions across draft</div>
@@ -237,6 +238,10 @@ export function SowStudio() {
           <div className="pt-2 border-t space-y-1.5">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Selected section</div>
             <div className="font-medium">{activeSection.label}</div>
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <ProvenanceChip section={activeSection} />
+              <SectionStatusChip section={activeSection} />
+            </div>
             <div className="flex gap-1 flex-wrap">
               <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDrawer("ai")}><Sparkles className="h-3 w-3 mr-1" />AI Review ({activeSection.suggestions.filter((x) => x.status === "pending").length})</Button>
               <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDrawer("history")}><History className="h-3 w-3 mr-1" />History</Button>
@@ -245,6 +250,7 @@ export function SowStudio() {
           </div>
         )}
       </aside>
+      )}
 
       {/* Drawers */}
       {drawer && <DrawerHost onClose={() => setDrawer(null)}>
