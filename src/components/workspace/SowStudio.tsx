@@ -26,7 +26,7 @@ const workflowClass: Record<WorkflowStatus, string> = {
 export function SowStudio() {
   const ws = useWorkspace();
   const { state, includedEvidence, generateDraft, saveVersion, issueToVendor, editSectionBody,
-    reorderSection, removeSection, addSection, setSuggestionStatus, regenerateSection,
+    reorderSection, removeSection, addSection, setSuggestionStatus, regenerateSection, setSectionWorkflow, saveToDrive, createRevisedVendorDraft,
     addReviewer, addComment, resolveComment, addCollaborator, removeCollaborator,
     setCollaboratorAccess, setRail, updateMetadata } = ws;
 
