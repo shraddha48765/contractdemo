@@ -301,6 +301,19 @@ export function SowStudio() {
         {drawer === "meta" && <MetaDrawer onSave={(m) => { updateMetadata(m); flash("Metadata updated"); }} />}
       </DrawerHost>}
 
+      {regenOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setRegenOpen(null)}>
+          <div className="w-full max-w-lg rounded-xl border bg-card shadow-xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent2" /> Refine section with AI</div>
+            <p className="text-xs text-muted-foreground">Describe the change you want. The AI will add a tracked suggestion — nothing is applied until you accept it in AI Review.</p>
+            <textarea autoFocus rows={4} value={regenOpen.instruction} onChange={(e) => setRegenOpen({ ...regenOpen, instruction: e.target.value })} className="w-full rounded border bg-background text-xs p-2 font-mono" placeholder="e.g. Tighten SLA to 4-hour response and reference MSA §7." />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setRegenOpen(null)}>Cancel</Button>
+              <Button size="sm" disabled={!regenOpen.instruction.trim()} onClick={async () => { const { sectionId, instruction } = regenOpen; setRegenOpen(null); await regenerateSection(sectionId, instruction.trim()); flash("AI proposal added — open AI Review to accept."); setDrawer("ai"); }}><Sparkles className="h-3.5 w-3.5 mr-1" /> Generate proposal</Button>
+            </div>
+          </div>
+        </div>
+      )}
       {toast && <div className="fixed bottom-4 right-4 z-50 bg-foreground text-background text-xs rounded-lg px-3 py-2 shadow-lg">{toast}</div>}
     </div>
   );
