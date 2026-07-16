@@ -373,8 +373,10 @@ function SectionBlock({
         <ProvenanceChip section={section} />
         {pending > 0 && <button onClick={(e) => { e.stopPropagation(); onAiReview(); }} className="text-[10px] rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 px-1.5 py-0.5">{pending} AI</button>}
         <div className="ml-auto opacity-0 group-hover:opacity-100 transition flex items-center gap-0.5 text-slate-500">
+          <button onClick={(e) => { e.stopPropagation(); onMove("top"); }} disabled={idx === 0} title="Move to top" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronsUp className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onMove("up"); }} disabled={idx === 0} title="Move up" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onMove("down"); }} disabled={idx === total - 1} title="Move down" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onMove("bottom"); }} disabled={idx === total - 1} title="Move to bottom" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronsDown className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onRegenerate(); }} title="Regenerate" className="p-1 hover:bg-slate-100 rounded"><RefreshCw className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onComment(); }} title="Comment" className="p-1 hover:bg-slate-100 rounded"><MessageSquareText className="h-3.5 w-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onSendForReview(); }} title="Send for review" className="p-1 hover:bg-slate-100 rounded"><Send className="h-3.5 w-3.5" /></button>
