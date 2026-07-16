@@ -6,7 +6,7 @@ import type {
   SectionRevision, SuggestedChange, WorkspaceState,
 } from "./types";
 import { seedEvidenceDocs } from "@/lib/seeds/evidencePack";
-import { industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
+import { availableTemplates, industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
 import { getProvider } from "@/lib/providers/documentIntelligence";
 
 const CURRENT_USER = "Procurement Buyer";
@@ -57,9 +57,10 @@ type Action =
   | { type: "APPEND_SECTION"; section: DraftSection }
   | { type: "SET_DRAFT_STATUS"; status: DraftStatus }
   | { type: "EDIT_SECTION_BODY"; sectionId: string; body: string; actor?: string }
-  | { type: "REORDER_SECTION"; sectionId: string; direction: "up" | "down" }
+  | { type: "REORDER_SECTION"; sectionId: string; direction: "up" | "down" | "top" | "bottom" }
   | { type: "REMOVE_SECTION"; sectionId: string }
-  | { type: "ADD_SECTION"; section: DraftSection }
+  | { type: "ADD_SECTION"; section: DraftSection; insertAfterId?: string }
+  | { type: "SET_SECTION_WORKFLOW"; sectionId: string; workflowStatus: import("./types").WorkflowStatus }
   | { type: "SET_SUGGESTION_STATUS"; sectionId: string; suggestionId: string; status: SuggestedChange["status"]; editedProposedText?: string }
   | { type: "ADD_SUGGESTION"; sectionId: string; suggestion: SuggestedChange }
   | { type: "SAVE_VERSION"; version: DocumentVersion }
@@ -136,24 +137,46 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
         const list = [...d.sections].sort((a, b) => a.order - b.order);
         const idx = list.findIndex((s) => s.id === action.sectionId);
         if (idx < 0) return d;
-        const swap = action.direction === "up" ? idx - 1 : idx + 1;
-        if (swap < 0 || swap >= list.length) return d;
-        const a = list[idx], b = list[swap];
-        const rev: SectionRevision = { id: `r-${Date.now()}`, ts: nowIso(), actor: CURRENT_USER, kind: "structural", summary: `Reordered ${a.label} ${action.direction}` };
-        const map = new Map(list.map((s, i) => [s.id, i]));
-        map.set(a.id, swap); map.set(b.id, idx);
-        return { ...d, sections: d.sections.map((s) => ({ ...s, order: map.get(s.id) ?? s.order, history: s.id === a.id ? [rev, ...s.history] : s.history })) };
+        const moving = list[idx];
+        list.splice(idx, 1);
+        let target = idx;
+        if (action.direction === "up") target = Math.max(0, idx - 1);
+        else if (action.direction === "down") target = Math.min(list.length, idx + 1);
+        else if (action.direction === "top") target = 0;
+        else if (action.direction === "bottom") target = list.length;
+        list.splice(target, 0, moving);
+        const rev: SectionRevision = { id: `r-${Date.now()}`, ts: nowIso(), actor: CURRENT_USER, kind: "structural", summary: `Reordered ${moving.label} → ${action.direction}` };
+        const order = new Map(list.map((s, i) => [s.id, i]));
+        return { ...d, sections: d.sections.map((s) => ({ ...s, order: order.get(s.id) ?? s.order, history: s.id === moving.id ? [rev, ...s.history] : s.history })) };
       });
     case "REMOVE_SECTION":
-      return withUpdatedDraft(state, (d) => ({ ...d, sections: d.sections.filter((s) => s.id !== action.sectionId) }));
+      return withUpdatedDraft(state, (d) => {
+        const remaining = d.sections.filter((s) => s.id !== action.sectionId)
+          .sort((a, b) => a.order - b.order)
+          .map((s, i) => ({ ...s, order: i }));
+        return { ...d, sections: remaining };
+      });
     case "ADD_SECTION":
-      return withUpdatedDraft(state, (d) => ({ ...d, sections: [...d.sections, action.section] }));
+      return withUpdatedDraft(state, (d) => {
+        const list = [...d.sections].sort((a, b) => a.order - b.order);
+        let insertAt = list.length;
+        if (action.insertAfterId) {
+          const i = list.findIndex((s) => s.id === action.insertAfterId);
+          if (i >= 0) insertAt = i + 1;
+        }
+        list.splice(insertAt, 0, action.section);
+        return { ...d, sections: list.map((s, i) => ({ ...s, order: i })) };
+      });
+    case "SET_SECTION_WORKFLOW":
+      return withUpdatedDraft(state, (d) => updateSection(d, action.sectionId, (s) => {
+        const rev: SectionRevision = { id: `r-${Date.now()}`, ts: nowIso(), actor: CURRENT_USER, kind: "status", summary: `Workflow status → ${action.workflowStatus}` };
+        return { ...s, workflowStatus: action.workflowStatus, history: [rev, ...s.history] };
+      }));
     case "SET_SUGGESTION_STATUS": {
       const { sectionId, suggestionId, status, editedProposedText } = action;
       return withUpdatedDraft(state, (d) => updateSection(d, sectionId, (s) => {
         const target = s.suggestions.find((x) => x.id === suggestionId);
         if (!target || target.status !== "pending") return s;
-        // Determine new body:
         let newBody = s.currentBody;
         let bodyChanged = false;
         if (status === "accepted" || status === "modified") {
@@ -178,6 +201,8 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
         return {
           ...s,
           currentBody: newBody,
+          // AI provenance sticks — accepting a proposal means AI contributed content.
+          aiTouched: s.aiTouched || (status === "accepted" || status === "modified") ? true : s.aiTouched,
           suggestions: s.suggestions.map((x) => x.id === suggestionId ? {
             ...x, status, editedProposedText: status === "modified" ? editedProposedText : undefined,
             decidedBy: CURRENT_USER, decidedAt: nowIso(),
@@ -243,15 +268,18 @@ interface WorkspaceApi {
   uploadEvidence: (partial: Omit<EvidenceDocument, "included" | "source" | "status">) => void;
   confirmEvidenceSet: () => void;
   // Draft
-  generateDraft: (opts: { packIds: string[] }) => Promise<void>;
+  generateDraft: (opts: { templateId?: string; packIds: string[] }) => Promise<void>;
   regenerateSection: (sectionId: string, instruction: string) => Promise<void>;
   editSectionBody: (sectionId: string, body: string) => void;
-  reorderSection: (sectionId: string, direction: "up" | "down") => void;
+  reorderSection: (sectionId: string, direction: "up" | "down" | "top" | "bottom") => void;
   removeSection: (sectionId: string) => void;
-  addSection: (label: string, origin?: DraftSection["origin"]) => void;
+  addSection: (label: string, opts?: { origin?: DraftSection["origin"]; insertAfterId?: string; sectionId?: string }) => void;
+  setSectionWorkflow: (sectionId: string, workflowStatus: import("./types").WorkflowStatus) => void;
   setSuggestionStatus: (sectionId: string, suggestionId: string, status: SuggestedChange["status"], editedProposedText?: string) => void;
   saveVersion: (label?: string, summary?: string) => DocumentVersion | null;
-  issueToVendor: (vendor: string) => void;
+  saveToDrive: () => void;
+  issueToVendor: (vendor: string) => { created: boolean; version?: DocumentVersion; reason?: string };
+  createRevisedVendorDraft: (vendor: string) => { created: boolean; version?: DocumentVersion; reason?: string };
   updateMetadata: (meta: Partial<DraftMetadata>) => void;
   // Collab
   addComment: (c: Omit<Comment, "id" | "createdAt" | "state" | "author" | "authorName">) => void;
@@ -305,9 +333,9 @@ export function WorkspaceProvider({ requestId, children }: { requestId: string; 
         const summary = provider.buildEvidenceSummary(includedEvidence);
         dispatch({ type: "CONFIRM_EVIDENCE_SET", summary });
       },
-      generateDraft: async ({ packIds }) => {
+      generateDraft: async ({ templateId, packIds }) => {
         const provider = await getProvider();
-        const template = industrialMaintenanceTemplate;
+        const template = availableTemplates.find((t) => t.id === templateId) ?? industrialMaintenanceTemplate;
         const packs = sectionPacks.filter((p) => packIds.includes(p.id));
         const packSecs = packs.flatMap((p) => p.sections);
         const now = nowIso();
@@ -331,7 +359,7 @@ export function WorkspaceProvider({ requestId, children }: { requestId: string; 
           requestId: state.requestId, evidenceSetId: state.evidenceSet.id, templateId: template.id,
           templateSections: template.baseSections, packSections: packSecs, evidence: includedEvidence,
         })) {
-          if (evt.type === "section") dispatch({ type: "APPEND_SECTION", section: evt.section });
+          if (evt.type === "section") dispatch({ type: "APPEND_SECTION", section: { ...evt.section, aiTouched: true } });
           if (evt.type === "done") dispatch({ type: "SET_DRAFT_STATUS", status: "DraftGenerated" });
         }
       },
@@ -352,15 +380,18 @@ export function WorkspaceProvider({ requestId, children }: { requestId: string; 
       editSectionBody: (sectionId, body) => dispatch({ type: "EDIT_SECTION_BODY", sectionId, body }),
       reorderSection: (sectionId, direction) => dispatch({ type: "REORDER_SECTION", sectionId, direction }),
       removeSection: (sectionId) => dispatch({ type: "REMOVE_SECTION", sectionId }),
-      addSection: (label, origin = "user") => {
-        const id = `s-user-${Date.now()}`;
+      addSection: (label, opts) => {
+        const origin = opts?.origin ?? "user";
+        const id = opts?.sectionId ?? `s-user-${Date.now()}`;
         const order = (state.draft?.sections.length ?? 0);
-        dispatch({ type: "ADD_SECTION", section: {
+        dispatch({ type: "ADD_SECTION", insertAfterId: opts?.insertAfterId, section: {
           id, label, order, origin, required: false, status: "empty",
           originalText: "", currentBody: "", suggestions: [], sourceEvidenceIds: [],
           history: [{ id: `h-${id}`, ts: nowIso(), actor: CURRENT_USER, kind: "structural", summary: "Section added" }],
         } });
       },
+      setSectionWorkflow: (sectionId, workflowStatus) =>
+        dispatch({ type: "SET_SECTION_WORKFLOW", sectionId, workflowStatus }),
       setSuggestionStatus: (sectionId, suggestionId, status, editedProposedText) =>
         dispatch({ type: "SET_SUGGESTION_STATUS", sectionId, suggestionId, status, editedProposedText }),
       saveVersion: (label, summary) => {
@@ -376,8 +407,20 @@ export function WorkspaceProvider({ requestId, children }: { requestId: string; 
         dispatch({ type: "SET_DRAFT_STATUS", status: "Saved" });
         return version;
       },
+      saveToDrive: () => {
+        // Demo-mode "Save to Drive" — no external integration; audit only.
+        dispatch({ type: "AUDIT", event: auditEvt(CURRENT_USER, "Human", "Saved to Drive (demo — no external integration)") });
+      },
       issueToVendor: (vendor) => {
-        if (!state.draft) return;
+        if (!state.draft) return { created: false, reason: "no-draft" };
+        // Guard: repeat issue with no material changes since the last v1.0 is a no-op.
+        const alreadyIssuedV1 = state.versions.find((v) => v.version === 1 && v.minor === 0 && v.immutable);
+        if (alreadyIssuedV1) {
+          const sameBody = JSON.stringify(alreadyIssuedV1.snapshot.sections.map((s) => s.currentBody)) ===
+                           JSON.stringify(state.draft.sections.map((s) => s.currentBody));
+          if (sameBody) return { created: false, reason: "no-changes-since-v1.0" };
+          return { created: false, reason: "material-changes-use-revised-draft" };
+        }
         const version: DocumentVersion = {
           id: `v-${Date.now()}`, version: 1, minor: 0,
           label: "Issued to Vendor v1.0", ts: nowIso(),
@@ -386,6 +429,21 @@ export function WorkspaceProvider({ requestId, children }: { requestId: string; 
         };
         dispatch({ type: "SAVE_VERSION", version });
         dispatch({ type: "ISSUE_TO_VENDOR", vendor });
+        return { created: true, version };
+      },
+      createRevisedVendorDraft: (vendor) => {
+        if (!state.draft) return { created: false, reason: "no-draft" };
+        const issuedV1 = state.versions.find((v) => v.version === 1 && v.minor === 0 && v.immutable);
+        if (!issuedV1) return { created: false, reason: "no-v1-yet" };
+        const nextMinor = Math.max(0, ...state.versions.filter((v) => v.version === 1).map((v) => v.minor)) + 1;
+        const version: DocumentVersion = {
+          id: `v-${Date.now()}`, version: 1, minor: nextMinor,
+          label: `Revised Vendor Draft v1.${nextMinor}`, ts: nowIso(),
+          createdBy: CURRENT_USER, summary: `Revised draft for ${vendor} after material edits`,
+          status: state.draft.status, immutable: true, snapshot: state.draft,
+        };
+        dispatch({ type: "SAVE_VERSION", version });
+        return { created: true, version };
       },
       updateMetadata: (meta) => dispatch({ type: "UPDATE_METADATA", meta }),
       addComment: (c) => dispatch({ type: "ADD_COMMENT", comment: {

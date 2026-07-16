@@ -1,17 +1,27 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useWorkspace } from "@/lib/workspace/WorkspaceProvider";
-import { industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
+import { availableTemplates, industrialMaintenanceTemplate, sectionPacks } from "@/lib/seeds/templates";
 import { exportDocx, exportEvidencePackZip } from "@/lib/workspace/exports";
-import type { DraftSection, SectionRevision, SuggestedChange } from "@/lib/workspace/types";
+import type { DraftSection, SectionRevision, SuggestedChange, WorkflowStatus } from "@/lib/workspace/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sparkles, FileText, MessageSquareText, Users, Download, Printer, Send, Save,
-  ChevronUp, ChevronDown, Trash2, Plus, RefreshCw, Check, X, History, Settings2, ListTree,
-  Maximize2, Minimize2, RotateCcw,
+  ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, Trash2, Plus, RefreshCw, Check, X, History, Settings2, ListTree,
+  RotateCcw, HardDrive, CornerDownRight,
 } from "lucide-react";
 
 type Drawer = null | "ai" | "history" | "comments" | "collab" | "review" | "meta";
+const WORKFLOW_CYCLE: WorkflowStatus[] = ["draft", "needs-review", "approved", "rejected"];
+const workflowLabel: Record<WorkflowStatus, string> = {
+  draft: "Draft", "needs-review": "Needs Review", approved: "Approved", rejected: "Rejected",
+};
+const workflowClass: Record<WorkflowStatus, string> = {
+  draft: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
+  "needs-review": "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  approved: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  rejected: "bg-rose-500/15 text-rose-700 dark:text-rose-400",
+};
 
 export function SowStudio() {
   const ws = useWorkspace();
@@ -26,7 +36,11 @@ export function SowStudio() {
   const [templateId, setTemplateId] = useState<string>(industrialMaintenanceTemplate.id);
   const [packIds, setPackIds] = useState<string[]>(sectionPacks.map((p) => p.id));
   const [toast, setToast] = useState<string | null>(null);
-  const [focusMode, setFocusMode] = useState(false);
+  const [addCustomOpen, setAddCustomOpen] = useState(false);
+  const [customLabel, setCustomLabel] = useState("");
+  const [regenOpen, setRegenOpen] = useState<{ sectionId: string; instruction: string } | null>(null);
+  const [issueNotice, setIssueNotice] = useState<string | null>(null);
+  const focusMode = false;
   const [addOpen, setAddOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -71,19 +85,27 @@ export function SowStudio() {
         <div className="text-left rounded-lg border bg-muted/30 p-3 space-y-3">
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Base template</div>
-            <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="w-full h-8 rounded border bg-card text-xs px-2">
-              <option value={industrialMaintenanceTemplate.id}>{industrialMaintenanceTemplate.name} — {industrialMaintenanceTemplate.baseSections.length} sections</option>
+            <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="w-full h-8 rounded border bg-card text-xs px-2" aria-label="Base template">
+              {availableTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.id === industrialMaintenanceTemplate.id ? " — Recommended" : ""} · {t.baseSections.length} sections
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Section packs</div>
-            <select multiple value={packIds} onChange={(e) => setPackIds(Array.from(e.target.selectedOptions).map((o) => o.value))} className="w-full min-h-[64px] rounded border bg-card text-xs px-2 py-1">
-              {sectionPacks.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <div className="text-[10px] text-muted-foreground mt-1">Hold ⌘/Ctrl to select multiple.</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Add section packs</div>
+            <div className="space-y-1">
+              {sectionPacks.map((p) => (
+                <label key={p.id} className="flex items-start gap-2 text-xs">
+                  <input type="checkbox" checked={packIds.includes(p.id)} onChange={(e) => setPackIds((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))} className="mt-0.5" />
+                  <span><span className="font-medium">{p.name}</span> <span className="text-muted-foreground">— {p.description}</span></span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
-        <Button className="gap-1.5" onClick={() => generateDraft({ packIds })} disabled={includedEvidence.length === 0}>
+        <Button className="gap-1.5" onClick={() => generateDraft({ templateId, packIds })} disabled={includedEvidence.length === 0}>
           <Sparkles className="h-4 w-4" /> Generate first draft {includedEvidence.length === 0 && "(include evidence first)"}
         </Button>
       </div>
@@ -125,13 +147,22 @@ export function SowStudio() {
                 <div className="absolute z-30 mt-1 left-0 right-0 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg text-xs">
                   {addableSections.length === 0 && <div className="p-2 text-muted-foreground">All template & pack sections already added.</div>}
                   {addableSections.map((s) => (
-                    <button key={s.id} onClick={() => { addSection(s.label); setAddOpen(false); flash(`Added section: ${s.label}`); }} className="w-full text-left px-2 py-1.5 hover:bg-muted flex items-center justify-between">
+                    <button key={s.id} onClick={() => { addSection(s.label, { sectionId: s.id, insertAfterId: activeSection?.id }); setAddOpen(false); flash(`Added section: ${s.label}`); }} className="w-full text-left px-2 py-1.5 hover:bg-muted flex items-center justify-between">
                       <span>{s.label}</span>
                       <span className="text-[10px] text-muted-foreground">{s.group}</span>
                     </button>
                   ))}
                   <div className="border-t">
-                    <button onClick={() => { const label = prompt("Custom section title?"); if (label) { addSection(label); flash(`Added custom section: ${label}`); } setAddOpen(false); }} className="w-full text-left px-2 py-1.5 hover:bg-muted italic text-muted-foreground">+ Custom section…</button>
+                    <button onClick={() => { setAddOpen(false); setAddCustomOpen(true); }} className="w-full text-left px-2 py-1.5 hover:bg-muted italic text-muted-foreground">+ Custom section…</button>
+                  </div>
+                </div>
+              )}
+              {addCustomOpen && (
+                <div className="absolute z-30 mt-1 left-0 right-0 rounded-md border bg-popover shadow-lg p-2 space-y-2">
+                  <Input autoFocus value={customLabel} onChange={(e) => setCustomLabel(e.target.value)} placeholder="Section title…" className="h-7 text-xs" onKeyDown={(e) => { if (e.key === "Enter" && customLabel.trim()) { addSection(customLabel.trim(), { insertAfterId: activeSection?.id }); flash(`Added: ${customLabel.trim()}`); setCustomLabel(""); setAddCustomOpen(false); } if (e.key === "Escape") { setAddCustomOpen(false); setCustomLabel(""); } }} />
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={() => { setAddCustomOpen(false); setCustomLabel(""); }}>Cancel</Button>
+                    <Button size="sm" className="h-6 text-[11px]" disabled={!customLabel.trim()} onClick={() => { addSection(customLabel.trim(), { insertAfterId: activeSection?.id }); flash(`Added: ${customLabel.trim()}`); setCustomLabel(""); setAddCustomOpen(false); }}>Add</Button>
                   </div>
                 </div>
               )}
@@ -157,7 +188,7 @@ export function SowStudio() {
           <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5">{draft.status}</span>
           {draft.metadata.vendor && <span className="text-muted-foreground">· {draft.metadata.vendor}</span>}
           <div className="ml-auto flex gap-1">
-            <IconBtn onClick={() => setFocusMode((v) => !v)} title={focusMode ? "Exit focus mode" : "Enter focus mode"}>{focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}</IconBtn>
+            
             <IconBtn onClick={() => { setDrawer("meta"); }} title="Document details"><Settings2 className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("history")} title="Version history"><History className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("comments")} title="Comments" badge={openComments || undefined}><MessageSquareText className="h-3.5 w-3.5" /></IconBtn>

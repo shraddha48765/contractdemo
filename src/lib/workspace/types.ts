@@ -122,6 +122,10 @@ export interface SectionRevision {
   after?: string;
 }
 
+// Workflow status is separate from provenance and from the derived section.status.
+// Users manually set this via the clickable outline pill.
+export type WorkflowStatus = "draft" | "needs-review" | "approved" | "rejected";
+
 export type SuggestionClassification =
   | "Gap"
   | "Conflict"
@@ -161,6 +165,8 @@ export interface DraftSection {
   packId?: string;
   required: boolean;
   status: SectionStatus;
+  workflowStatus?: WorkflowStatus;  // manual pill in outline (spec §5)
+  aiTouched?: boolean;              // persists AI provenance even after human edits
   originalText: string;   // first generated body, immutable
   currentBody: string;    // what the document currently shows
   suggestions: SuggestedChange[];
