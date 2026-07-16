@@ -187,7 +187,8 @@ export function SowStudio() {
           <span className="text-muted-foreground">Rev {draft.metadata.revision}</span>
           <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5">{draft.status}</span>
           {draft.metadata.vendor && <span className="text-muted-foreground">· {draft.metadata.vendor}</span>}
-          <div className="ml-auto flex gap-1">
+          <div className="ml-auto flex items-center gap-1">
+            <button onClick={() => setFocusMode((v) => !v)} title={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"} className={`text-[10px] rounded-full px-2 py-0.5 border ${focusMode ? "bg-accent2 text-white border-accent2" : "bg-muted/40 border-border hover:bg-muted"}`}>{focusMode ? "Focus: ON" : "Focus Mode"}</button>
             
             <IconBtn onClick={() => { setDrawer("meta"); }} title="Document details"><Settings2 className="h-3.5 w-3.5" /></IconBtn>
             <IconBtn onClick={() => setDrawer("history")} title="Version history"><History className="h-3.5 w-3.5" /></IconBtn>
