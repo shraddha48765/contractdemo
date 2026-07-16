@@ -235,7 +235,7 @@ export function SowStudio() {
                 onMove={(dir) => reorderSection(s.id, dir)}
                 onRemove={() => { if (confirm(`Remove section "${s.label}"?`)) removeSection(s.id); }}
                 onAiReview={() => { setSelectedSectionId(s.id); setDrawer("ai"); }}
-                onRegenerate={async () => { const inst = prompt("Refinement instructions?"); if (inst) { await regenerateSection(s.id, inst); flash("AI proposal added — open AI Review to accept."); setSelectedSectionId(s.id); setDrawer("ai"); } }}
+                onRegenerate={() => { setSelectedSectionId(s.id); setRegenOpen({ sectionId: s.id, instruction: "" }); }}
                 onHistory={() => { setSelectedSectionId(s.id); setDrawer("history"); }}
                 onComment={() => { setSelectedSectionId(s.id); setDrawer("comments"); }}
                 onSendForReview={() => { setSelectedSectionId(s.id); setDrawer("review"); }}
