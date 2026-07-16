@@ -40,7 +40,7 @@ export function SowStudio() {
   const [customLabel, setCustomLabel] = useState("");
   const [regenOpen, setRegenOpen] = useState<{ sectionId: string; instruction: string } | null>(null);
   const [issueNotice, setIssueNotice] = useState<string | null>(null);
-  const focusMode = false;
+  const [focusMode, setFocusMode] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
