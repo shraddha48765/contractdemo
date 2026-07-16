@@ -361,7 +361,7 @@ function SectionBlock({
   section: DraftSection; idx: number; total: number; active: boolean;
   highlight: boolean; registerRef: (el: HTMLDivElement | null) => void;
   onFocus: () => void; onChange: (body: string) => void;
-  onMove: (dir: "up" | "down") => void; onRemove: () => void;
+  onMove: (dir: "up" | "down" | "top" | "bottom") => void; onRemove: () => void;
   onAiReview: () => void; onRegenerate: () => void;
   onHistory: () => void; onComment: () => void; onSendForReview: () => void;
 }) {
