@@ -285,11 +285,29 @@ function SectionStatusChip({ section }: { section: DraftSection }) {
   return <span className={`text-[9px] rounded-full px-1.5 py-0.5 ${map[section.status]}`}>{section.status}</span>;
 }
 
+function ProvenanceChip({ section }: { section: DraftSection }) {
+  const map: Record<DraftSection["origin"], { label: string; cls: string }> = {
+    template: { label: "Template", cls: "bg-slate-500/15 text-slate-700 dark:text-slate-300" },
+    pack: { label: "Pack", cls: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300" },
+    user: { label: "User", cls: "bg-teal-500/15 text-teal-700 dark:text-teal-300" },
+  };
+  const aiTouched = section.currentBody && section.currentBody === section.originalText;
+  const m = map[section.origin];
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`text-[9px] rounded-full px-1.5 py-0.5 ${m.cls}`}>{m.label}</span>
+      {aiTouched && <span className="text-[9px] rounded-full px-1.5 py-0.5 bg-blue-500/15 text-blue-700 dark:text-blue-300">AI-drafted</span>}
+    </span>
+  );
+}
+
 function SectionBlock({
-  section, idx, total, active, onFocus, onChange, onMove, onRemove,
+  section, idx, total, active, highlight, registerRef,
+  onFocus, onChange, onMove, onRemove,
   onAiReview, onRegenerate, onHistory, onComment, onSendForReview,
 }: {
   section: DraftSection; idx: number; total: number; active: boolean;
+  highlight: boolean; registerRef: (el: HTMLDivElement | null) => void;
   onFocus: () => void; onChange: (body: string) => void;
   onMove: (dir: "up" | "down") => void; onRemove: () => void;
   onAiReview: () => void; onRegenerate: () => void;
@@ -297,9 +315,10 @@ function SectionBlock({
 }) {
   const pending = section.suggestions.filter((s) => s.status === "pending").length;
   return (
-    <div className={`group rounded-lg border-l-2 pl-4 -ml-4 py-1 ${active ? "border-accent2" : "border-transparent"}`} onClick={onFocus}>
+    <div ref={registerRef} className={`group rounded-lg border-l-2 pl-4 -ml-4 py-1 transition-colors ${active ? "border-accent2" : "border-transparent"} ${highlight ? "bg-amber-100/60 dark:bg-amber-500/10" : ""}`} onClick={onFocus}>
       <div className="flex items-center gap-2 mb-1">
         <h2 className="text-lg font-semibold">{idx + 1}. {section.label}</h2>
+        <ProvenanceChip section={section} />
         {pending > 0 && <button onClick={(e) => { e.stopPropagation(); onAiReview(); }} className="text-[10px] rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 px-1.5 py-0.5">{pending} AI</button>}
         <div className="ml-auto opacity-0 group-hover:opacity-100 transition flex items-center gap-0.5 text-slate-500">
           <button onClick={(e) => { e.stopPropagation(); onMove("up"); }} disabled={idx === 0} title="Move up" className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
