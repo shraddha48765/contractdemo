@@ -112,18 +112,18 @@ export function AppLayout({ children, title, subtitle }: { children: ReactNode; 
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
           <div className="flex items-center justify-between px-6 py-4 gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              {logoError ? (
+              {/* {logoError ? (
                 <div className="h-10 px-3 rounded-sm border border-border bg-white shrink-0 grid place-items-center text-sm font-bold tracking-tight text-foreground">
                   CITGO
                 </div>
               ) : (
                 <img
-                  src="/citgo-logo.png"
+                  src=""
                   alt="CITGO"
                   onError={() => setLogoError(true)}
                   className="h-10 w-auto rounded-sm shrink-0 border border-border bg-white p-1"
                 />
-              )}
+              )} */}
               <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-tight truncate">{title}</h1>
                 {subtitle && <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
